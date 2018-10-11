@@ -150,10 +150,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\PhysicsEngine.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Core.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\PhysicsEngine.h" />
     <ClInclude Include="src\Core.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
