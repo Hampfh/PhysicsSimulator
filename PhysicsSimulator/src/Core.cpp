@@ -46,11 +46,23 @@ void Core::OnEvent(SDL_Event* event) {
 	}
 }
 void Core::OnLoop() {
+	std::cout << "TEST" << std::endl;
+	SDL_Rect rect;
+	rect.w = 10;
+	rect.h = 10;
+	rect.x = 100;
+	rect.y = 100;
 
+	SDL_SetRenderDrawColor(Core::renderer, 20, 20, 20, 255);
+	SDL_RenderFillRect(Core::renderer, &rect);
 }
 void Core::OnRender() {
-	SDL_RenderClear(renderer);
+
 	SDL_RenderPresent(renderer);
+
+	SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+
+	SDL_RenderClear(renderer);
 }
 void Core::OnCleanUp() {
 	SDL_DestroyRenderer(renderer);
