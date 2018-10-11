@@ -2,12 +2,22 @@
 #include "Core.h"
 #include <cmath>
 
+struct Vector {
+	int x = 0;
+	int y = 0;
+
+	void Sub(Vector vector);
+	void Add(Vector vector);
+};
+
 class PhysicsObject {
-private:
-	SDL_Point position;
+public:
+	Vector position;
 	int radius;
 	int mass;
 	SDL_Color color;
+	Vector acceleration;
+	Vector velocity;
 public:
 	PhysicsObject* next = nullptr;
 public:
@@ -17,17 +27,14 @@ public:
 
 class PhysicsEngine {
 private:
-	int G; // GravitationalConstant
-
 	// Linked list
 	PhysicsObject* firstObject = nullptr;
 	PhysicsObject* lastObject = nullptr;
-
 public:
-	PhysicsEngine(int GravitationalConstant = 6.67408*pow(10, -11));
+	PhysicsEngine(); 
 	~PhysicsEngine();
 
-	void RunPhysics();
+	void UpdatePhysics();
 	void AddToQueue(PhysicsObject* object);
 	PhysicsObject* SummonObject(SDL_Point* position, int radius, int mass, SDL_Color* color);
 };

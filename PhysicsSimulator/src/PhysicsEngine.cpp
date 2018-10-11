@@ -2,8 +2,20 @@
 
 SDL_Renderer* Core::renderer;
 
+void Vector::Sub(Vector vector) {
+	this->x = this->x - vector.x;
+	this->y = this->y - vector.y;
+}
+
+void Vector::Add(Vector vector) {
+	this->x = this->x + vector.x;
+	this->y = this->y + vector.y;
+}
+
 PhysicsObject::PhysicsObject(SDL_Point* position, int radius, int mass, SDL_Color* color) 
-: position(*position), radius(radius), mass(mass), color(*color) {
+: radius(radius), mass(mass), color(*color) {
+	this->position.x = position->x;
+	this->position.y = position->y;
 }
 
 void PhysicsObject::DrawCircle(int cx, int cy, int radius, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
@@ -15,17 +27,34 @@ void PhysicsObject::DrawCircle(int cx, int cy, int radius, Uint8 r, Uint8 g, Uin
 	}
 }
 
-PhysicsEngine::PhysicsEngine(int GravitationalConstant) : G(GravitationalConstant) {
+PhysicsEngine::PhysicsEngine() {
 
 }
 
 
 PhysicsEngine::~PhysicsEngine() {
-
+	// Delete queue
+	PhysicsObject* current = firstObject;
+	while (current != nullptr) {
+		current = current->next;
+		delete firstObject;
+		firstObject = current;
+	}
 }
 
-void PhysicsEngine::RunPhysics() {
+void PhysicsEngine::UpdatePhysics() {
+	int x;
+	int y;
+	SDL_GetGlobalMouseState(&x, &y);
+	Vector mouse;
+	mouse.x = x;
+	mouse.y = y;
+	mouse.Sub(firstObject->position);
+	Vector acceleration = mouse;
 
+	Vector velocity;
+	velocity.Add(acceleration);
+	firstObject->position.Add(velocity);
 }
 
 void PhysicsEngine::AddToQueue(PhysicsObject* object) {
@@ -37,6 +66,7 @@ void PhysicsEngine::AddToQueue(PhysicsObject* object) {
 		lastObject->next = object;
 		lastObject = object;
 	}
+	std::cout << "ENDL" << std::endl;
 }
 
 PhysicsObject* PhysicsEngine::SummonObject(SDL_Point* position, int radius, int mass, SDL_Color* color) {

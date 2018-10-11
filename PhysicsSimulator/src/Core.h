@@ -14,6 +14,8 @@ private:
 	bool running;
 	SDL_Window* window;
 	static SDL_Renderer* renderer;
+
+	PhysicsEngine* pe = nullptr;
 public:
 	Core();
 	int OnExecute();

@@ -39,16 +39,26 @@ bool Core::OnInit() {
 
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
+	PhysicsEngine* pe = new PhysicsEngine;
+
+	// Properies for object
+	SDL_Point position = { 200, 200 };
+	SDL_Color color = { 20, 20, 20, 255 };
+	pe->SummonObject(&position, 30, 100, &color);
+
 	return true;
 }
+
 void Core::OnEvent(SDL_Event* event) {
 	if (event->type == SDL_QUIT) {
 		running = false;
 	}
 }
+
 void Core::OnLoop() {
-	PhysicsEngine pe;
+	pe->UpdatePhysics();
 }
+
 void Core::OnRender() {
 
 	SDL_RenderPresent(renderer);
