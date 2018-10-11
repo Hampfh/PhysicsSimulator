@@ -5,9 +5,11 @@
 
 class Core {
 private:
+	friend class PhysicsEngine;
+
 	bool running;
 	SDL_Window* window;
-	SDL_Renderer* renderer;
+	static SDL_Renderer* renderer;
 public:
 	Core();
 	int OnExecute();
