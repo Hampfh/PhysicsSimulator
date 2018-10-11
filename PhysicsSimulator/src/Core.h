@@ -6,6 +6,10 @@
 class Core {
 private:
 	friend class PhysicsEngine;
+	friend class PhysicsObject;
+	
+	const int screenWidth = 800;
+	const int screenHeight = 600;
 
 	bool running;
 	SDL_Window* window;

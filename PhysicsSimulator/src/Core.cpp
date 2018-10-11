@@ -1,4 +1,5 @@
 #include "Core.h"
+#include "PhysicsEngine.h"
 
 Core::Core() {
 	window = NULL;
@@ -28,7 +29,7 @@ bool Core::OnInit() {
 		return false;
 	}
 
-	window = SDL_CreateWindow("Physics Simulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 680, 400, SDL_WINDOW_OPENGL);
+	window = SDL_CreateWindow("Physics Simulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, SDL_WINDOW_OPENGL);
 
 	if (window == NULL) {
 		printf("Could not create window %s\n", SDL_GetError());
@@ -46,15 +47,7 @@ void Core::OnEvent(SDL_Event* event) {
 	}
 }
 void Core::OnLoop() {
-	std::cout << "TEST" << std::endl;
-	SDL_Rect rect;
-	rect.w = 10;
-	rect.h = 10;
-	rect.x = 100;
-	rect.y = 100;
-
-	SDL_SetRenderDrawColor(Core::renderer, 20, 20, 20, 255);
-	SDL_RenderFillRect(Core::renderer, &rect);
+	PhysicsEngine pe;
 }
 void Core::OnRender() {
 
