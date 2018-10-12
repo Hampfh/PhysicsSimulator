@@ -25,7 +25,7 @@ int Core::OnExecute() {
 }
 
 bool Core::OnInit() {
-	if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
+	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		return false;
 	}
 
@@ -39,12 +39,18 @@ bool Core::OnInit() {
 
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-	PhysicsEngine* pe = new PhysicsEngine;
+	pe = new PhysicsEngine;
 
 	// Properies for object
-	SDL_Point position = { 200, 200 };
-	SDL_Color color = { 20, 20, 20, 255 };
-	pe->SummonObject(&position, 30, 100, &color);
+	SDL_Point position;
+	position.x = screenWidth/2;
+	position.y = screenHeight / 2;
+	SDL_Color color;
+	color.r = 20;
+	color.g = 20;
+	color.b = 20;
+	color.a = 255;
+	pe->SummonObject(&position, 50, 0, &color);
 
 	return true;
 }

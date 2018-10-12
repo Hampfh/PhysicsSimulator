@@ -8,6 +8,8 @@ struct Vector {
 
 	void Sub(Vector vector);
 	void Add(Vector vector);
+	void Limit(int limit);
+	void SetMag(float magnitude);
 };
 
 class PhysicsObject {
@@ -22,7 +24,7 @@ public:
 	PhysicsObject* next = nullptr;
 public:
 	PhysicsObject(SDL_Point* position, int radius, int mass, SDL_Color* color);
-	void DrawCircle(int cx, int cy, int radius, Uint8 r, Uint8 g, Uint8 b, Uint8 a);
+	void DrawCircle();
 };
 
 class PhysicsEngine {
@@ -30,6 +32,10 @@ private:
 	// Linked list
 	PhysicsObject* firstObject = nullptr;
 	PhysicsObject* lastObject = nullptr;
+
+	Vector* mouse = nullptr;
+	Vector* acceleration = nullptr;
+	Vector* velocity = nullptr;
 public:
 	PhysicsEngine(); 
 	~PhysicsEngine();
