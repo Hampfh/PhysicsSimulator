@@ -50,7 +50,7 @@ bool Core::OnInit() {
 	color.g = 20;
 	color.b = 20;
 	color.a = 255;
-	pe->SummonObject(&position, 50, 0, &color);
+	pe->SummonObject(&position, 50, 10, &color);
 
 	return true;
 }

@@ -77,7 +77,6 @@ void PhysicsEngine::UpdatePhysics() {
 	std::cout << "FirstObject: " << firstObject->position.x << " : " << firstObject->position.y << std::endl;
 	acceleration = mouse;
 
-
 	velocity->Add(*acceleration);
 	velocity->Limit(5);
 	firstObject->position.Add(*velocity);

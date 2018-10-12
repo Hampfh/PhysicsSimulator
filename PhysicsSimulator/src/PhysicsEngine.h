@@ -33,6 +33,7 @@ private:
 	PhysicsObject* firstObject = nullptr;
 	PhysicsObject* lastObject = nullptr;
 
+	int mouseMass = 6.698*pow(10, 27);
 	Vector* mouse = nullptr;
 	Vector* acceleration = nullptr;
 	Vector* velocity = nullptr;
@@ -42,6 +43,10 @@ public:
 
 	void UpdatePhysics();
 	void AddToQueue(PhysicsObject* object);
+	/**
+	@Desciption: Inserts a sphere into the space
+	@Return type: PhysicsObject*
+	*/
 	PhysicsObject* SummonObject(SDL_Point* position, int radius, int mass, SDL_Color* color);
 };
 
