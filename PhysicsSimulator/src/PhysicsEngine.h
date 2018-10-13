@@ -1,30 +1,30 @@
 #pragma once
 #include "Core.h"
 #include <cmath>
-
-struct Vector {
-	int x = 0;
-	int y = 0;
-
-	void Sub(Vector vector);
-	void Add(Vector vector);
-	void Limit(int limit);
-	void SetMag(float magnitude);
-};
+#include "includes\Vector.h"
 
 class PhysicsObject {
-public:
-	Vector position;
+private:
+	Vector2 location;
+	Vector2 velocity;
+	Vector2 acceleration;
 	int radius;
-	int mass;
+	float mass;
 	SDL_Color color;
-	Vector acceleration;
-	Vector velocity;
 public:
 	PhysicsObject* next = nullptr;
 public:
 	PhysicsObject(SDL_Point* position, int radius, int mass, SDL_Color* color);
+	void ApplyForce(Vector2 force);
 	void DrawCircle();
+	void Update();
+
+	Vector2* getLocation() { return &location; };
+	Vector2* getVelocity() { return &velocity; };
+	Vector2* getAcceleration() { return &acceleration; };
+	float getX() { return location.x(); };
+	float getY() { return location.y(); };
+	float getMass() { return mass; };
 };
 
 class PhysicsEngine {
@@ -32,17 +32,17 @@ private:
 	// Linked list
 	PhysicsObject* firstObject = nullptr;
 	PhysicsObject* lastObject = nullptr;
-
-	int mouseMass = 6.698*pow(10, 27);
-	Vector* mouse = nullptr;
-	Vector* acceleration = nullptr;
-	Vector* velocity = nullptr;
+	
+	int simulationWidth;
+	int simulationHeight;
+	Vector2* mouse = nullptr;
 public:
-	PhysicsEngine(); 
+	PhysicsEngine(int simulationWidth, int simulationHeight);
 	~PhysicsEngine();
 
-	void UpdatePhysics();
+	void UpdatePhysics(SDL_Event* event);
 	void AddToQueue(PhysicsObject* object);
+	float DistanceDifference(PhysicsObject* point, PhysicsObject* pointTwo);
 	/**
 	@Desciption: Inserts a sphere into the space
 	@Return type: PhysicsObject*

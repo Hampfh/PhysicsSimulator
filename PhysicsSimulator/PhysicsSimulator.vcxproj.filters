@@ -24,12 +24,18 @@
     <ClCompile Include="src\PhysicsEngine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\includes\Vector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Core.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\PhysicsEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\includes\Vector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

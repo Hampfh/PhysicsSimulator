@@ -2,55 +2,42 @@
 
 SDL_Renderer* Core::renderer;
 
-void Vector::Sub(Vector vector) {
-	this->x = this->x - vector.x;
-	this->y = this->y - vector.y;
-}
-
-void Vector::Add(Vector vector) {
-	this->x = this->x + vector.x;
-	this->y = this->y + vector.y;
-}
-
-void Vector::Limit(int limit) {
-	if (this->x < 0 && abs(this->x) > limit) {
-		this->x = limit * -1;
-	} else if (this->x > limit) {
-		this->x = limit;
-	}
-
-	if (this->y < 0 && abs(this->y) > limit) {
-		this->y = limit * -1;
-	}
-	else if (this->y > limit) {
-		this->y = limit;
-	}
-}
-
-void Vector::SetMag(float magnitude) {
-	this->x = this->x * magnitude / 1;
-	this->y = this->y * magnitude / 1;
-}
+////////////////////////////////////////////////// PhysicsObject //////////////////////////////////////////////////////////////
 
 PhysicsObject::PhysicsObject(SDL_Point* position, int radius, int mass, SDL_Color* color) 
 : radius(radius), mass(mass), color(*color) {
-	this->position.x = position->x;
-	this->position.y = position->y;
+	location.Set(position->x, position->y);
+	velocity.Set(0,0);
+	acceleration.Set(0, 0);
+}
+
+void PhysicsObject::ApplyForce(Vector2 force) {
+	//std::cout << "Current: " << acceleration << " + " << force;
+	acceleration = acceleration + force;
+	//std::cout << " " << acceleration << std::endl;
 }
 
 void PhysicsObject::DrawCircle() {
 	for (double dy = 1; dy <= radius; dy += 1.0) {
 		double dx = floor(sqrt((2.0 * radius * dy) - (dy * dy)));
 		SDL_SetRenderDrawColor(Core::renderer, color.r, color.g, color.b, color.a);
-		SDL_RenderDrawLine(Core::renderer, position.x - dx, position.y + dy - radius, position.x + dx, position.y + dy - radius);
-		SDL_RenderDrawLine(Core::renderer, position.x - dx, position.y - dy + radius, position.x + dx, position.y - dy + radius);
+		SDL_RenderDrawLine(Core::renderer, location.x() - dx, location.y() + dy - radius, location.x() + dx, location.y() + dy - radius);
+		SDL_RenderDrawLine(Core::renderer, location.x() - dx, location.y() - dy + radius, location.x() + dx, location.y() - dy + radius);
 	}
 }
 
-PhysicsEngine::PhysicsEngine() {
-	mouse = new Vector;
-	acceleration = new Vector;
-	velocity = new Vector;
+// Updates the single object
+void PhysicsObject::Update() {
+	velocity = velocity + acceleration;
+	location = location + velocity;
+	DrawCircle();
+	acceleration.setMag(0);
+}
+
+////////////////////////////////////////////////// PhysicsEngine //////////////////////////////////////////////////////////////
+
+PhysicsEngine::PhysicsEngine(int simulationWidth, int simulationHeight) : simulationWidth(simulationWidth), simulationHeight(simulationHeight) {
+
 }
 
 
@@ -64,24 +51,55 @@ PhysicsEngine::~PhysicsEngine() {
 	}
 }
 
-void PhysicsEngine::UpdatePhysics() {
-	int x;
-	int y;
-	SDL_GetMouseState(&x, &y);
-	
-	mouse->x = x;
-	mouse->y = y;
-	mouse->Sub(firstObject->position);
-	mouse->SetMag(0.01);
-	std::cout << "MOUSE: " << mouse->x << " : " << mouse->y << std::endl;
-	std::cout << "FirstObject: " << firstObject->position.x << " : " << firstObject->position.y << std::endl;
-	acceleration = mouse;
+void PhysicsEngine::UpdatePhysics(SDL_Event* event) {
+	// Go through all objects
+	PhysicsObject* current = firstObject;
+	PhysicsObject* other = firstObject->next;
 
-	velocity->Add(*acceleration);
-	velocity->Limit(5);
-	firstObject->position.Add(*velocity);
-	firstObject->DrawCircle();
-	std::cout << "VELOCITY: " << velocity->x << " : " << velocity->y << std::endl;
+	switch (event->type) {
+		case SDL_KEYDOWN:
+			switch (event->key.keysym.sym) {
+				case SDLK_RSHIFT:
+					other->ApplyForce(Vector2(0.01, 0));
+					break;
+			}
+			break;
+	}
+
+	float forceStrength = 6.672 * pow(10, -11) * ((current->getMass() * other->getMass()) / pow(DistanceDifference(current, other), 2));
+	//std::cout << forceStrength << std::endl;
+
+	Vector2* pos1 = current->getLocation();
+	Vector2* pos2 = other->getLocation();
+
+	Vector2 dir = *pos1 - *pos2;
+	dir.setMag(forceStrength * 10000);
+
+	other->ApplyForce(dir);
+
+	//std::cout << "Accelera: " << *other->getAcceleration() << std::endl;
+	//std::cout << "Velocity: " << *other->getVelocity() << std::endl;
+
+
+	current->Update();
+	other->Update();
+
+	/*while (current != nullptr) {
+		current->Update();
+		current = current->next;
+	}
+	/*
+	firstObject->Update();
+
+	Vector2 gravity(0, 0.3);
+	firstObject->ApplyForce(gravity);
+
+	int objectY = firstObject->getY();
+
+	if (objectY > simulationHeight) {
+		firstObject->ApplyForce(Vector2(0, -0.4));
+	}
+	*/
 	SDL_Delay(1);
 }
 
@@ -95,6 +113,13 @@ void PhysicsEngine::AddToQueue(PhysicsObject* object) {
 		lastObject = object;
 	}
 	std::cout << "ENDL" << std::endl;
+}
+
+float PhysicsEngine::DistanceDifference(PhysicsObject* point, PhysicsObject* pointTwo) {
+	float differenceX = abs(point->getX() - pointTwo->getX());
+	float differenceY = abs(point->getY() - pointTwo->getY());
+
+	return sqrt(pow(differenceX, 2) + pow(differenceY, 2));
 }
 
 PhysicsObject* PhysicsEngine::SummonObject(SDL_Point* position, int radius, int mass, SDL_Color* color) {

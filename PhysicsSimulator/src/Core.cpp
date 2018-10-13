@@ -4,6 +4,7 @@
 Core::Core() {
 	window = NULL;
 	running = true;
+	pause = false;
 }
 
 int Core::OnExecute() {
@@ -16,7 +17,7 @@ int Core::OnExecute() {
 		while (SDL_PollEvent(&event)) {
 			OnEvent(&event);
 		}
-		OnLoop();
+		OnLoop(&event);
 		OnRender();
 	}
 	OnCleanUp();
@@ -39,39 +40,60 @@ bool Core::OnInit() {
 
 	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-	pe = new PhysicsEngine;
+	pe = new PhysicsEngine(screenWidth, screenHeight);
 
 	// Properies for object
 	SDL_Point position;
-	position.x = screenWidth/2;
-	position.y = screenHeight / 2;
+	position.x = 300;
+	position.y = 300;
 	SDL_Color color;
 	color.r = 20;
 	color.g = 20;
+	color.b = 50;
+	color.a = 255;
+	pe->SummonObject(&position, 50, 100, &color);
+	
+	position.x = 300;
+	position.y = 600;
+	color.r = 50;
+	color.g = 20;
 	color.b = 20;
 	color.a = 255;
-	pe->SummonObject(&position, 50, 10, &color);
+	pe->SummonObject(&position, 30, 100, &color);
 
 	return true;
 }
 
 void Core::OnEvent(SDL_Event* event) {
-	if (event->type == SDL_QUIT) {
-		running = false;
+	switch (event->type) {
+		case SDL_QUIT:
+			running = false;
+			break;
+		case SDL_KEYDOWN:
+			switch (event->key.keysym.sym) {
+				case SDLK_SPACE:
+					if (pause) pause = false;
+					else pause = true;
+					break;
+			}
+			break;
 	}
 }
 
-void Core::OnLoop() {
-	pe->UpdatePhysics();
+void Core::OnLoop(SDL_Event* event) {
+	if (!pause) {
+		pe->UpdatePhysics(event);
+	}
 }
 
 void Core::OnRender() {
+	if (!pause) {
+		SDL_RenderPresent(renderer);
 
-	SDL_RenderPresent(renderer);
+		SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
 
-	SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
-
-	SDL_RenderClear(renderer);
+		SDL_RenderClear(renderer);
+	}
 }
 void Core::OnCleanUp() {
 	SDL_DestroyRenderer(renderer);

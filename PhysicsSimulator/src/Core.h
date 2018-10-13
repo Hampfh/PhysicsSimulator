@@ -12,6 +12,7 @@ private:
 	const int screenHeight = 600;
 
 	bool running;
+	bool pause;
 	SDL_Window* window;
 	static SDL_Renderer* renderer;
 
@@ -22,7 +23,7 @@ public:
 public:
 	bool OnInit();
 	void OnEvent(SDL_Event* event);
-	void OnLoop();
+	void OnLoop(SDL_Event* event);
 	void OnRender();
 	void OnCleanUp();
 };
