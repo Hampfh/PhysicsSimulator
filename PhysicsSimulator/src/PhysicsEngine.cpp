@@ -52,54 +52,38 @@ PhysicsEngine::~PhysicsEngine() {
 }
 
 void PhysicsEngine::UpdatePhysics(SDL_Event* event) {
-	// Go through all objects
+	// Temporary variables
 	PhysicsObject* current = firstObject;
-	PhysicsObject* other = firstObject->next;
+	PhysicsObject* currentMatcher = firstObject;
 
-	switch (event->type) {
-		case SDL_KEYDOWN:
-			switch (event->key.keysym.sym) {
-				case SDLK_RSHIFT:
-					other->ApplyForce(Vector2(0.01, 0));
-					break;
+	// Go through all objects
+	while (current != nullptr) {
+		currentMatcher = firstObject;
+		while (currentMatcher != nullptr) {
+			if (currentMatcher == current) {
+				currentMatcher = currentMatcher->next;
+				continue; // Continues if matches with itself
 			}
-			break;
-	}
 
-	float forceStrength = 6.672 * pow(10, -11) * ((current->getMass() * other->getMass()) / pow(DistanceDifference(current, other), 2));
-	//std::cout << forceStrength << std::endl;
+			Vector2* pos1 = current->getLocation();
+			Vector2* pos2 = currentMatcher->getLocation();
+			Vector2 dir = *pos2 - *pos1;
 
-	Vector2* pos1 = current->getLocation();
-	Vector2* pos2 = other->getLocation();
+			// Newtons law of gravity
+			float forceStrength = 6.672 * pow(10, -11) * ((current->getMass() * currentMatcher->getMass()) / pow(DistanceDifference(current, currentMatcher), 2));
 
-	Vector2 dir = *pos1 - *pos2;
-	dir.setMag(forceStrength * 10000);
+			dir.setMag(forceStrength * 100000);
 
-	other->ApplyForce(dir);
+			current->ApplyForce(dir);
 
-	//std::cout << "Accelera: " << *other->getAcceleration() << std::endl;
-	//std::cout << "Velocity: " << *other->getVelocity() << std::endl;
+			std::cout << dir << std::endl;
 
-
-	current->Update();
-	other->Update();
-
-	/*while (current != nullptr) {
+			currentMatcher = currentMatcher->next;
+		}
 		current->Update();
 		current = current->next;
 	}
-	/*
-	firstObject->Update();
 
-	Vector2 gravity(0, 0.3);
-	firstObject->ApplyForce(gravity);
-
-	int objectY = firstObject->getY();
-
-	if (objectY > simulationHeight) {
-		firstObject->ApplyForce(Vector2(0, -0.4));
-	}
-	*/
 	SDL_Delay(1);
 }
 
@@ -112,7 +96,6 @@ void PhysicsEngine::AddToQueue(PhysicsObject* object) {
 		lastObject->next = object;
 		lastObject = object;
 	}
-	std::cout << "ENDL" << std::endl;
 }
 
 float PhysicsEngine::DistanceDifference(PhysicsObject* point, PhysicsObject* pointTwo) {

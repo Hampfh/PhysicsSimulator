@@ -42,25 +42,6 @@ bool Core::OnInit() {
 
 	pe = new PhysicsEngine(screenWidth, screenHeight);
 
-	// Properies for object
-	SDL_Point position;
-	position.x = 300;
-	position.y = 300;
-	SDL_Color color;
-	color.r = 20;
-	color.g = 20;
-	color.b = 50;
-	color.a = 255;
-	pe->SummonObject(&position, 50, 100, &color);
-	
-	position.x = 300;
-	position.y = 600;
-	color.r = 50;
-	color.g = 20;
-	color.b = 20;
-	color.a = 255;
-	pe->SummonObject(&position, 30, 100, &color);
-
 	return true;
 }
 
@@ -68,6 +49,24 @@ void Core::OnEvent(SDL_Event* event) {
 	switch (event->type) {
 		case SDL_QUIT:
 			running = false;
+			break;
+		case SDL_MOUSEBUTTONDOWN:
+			// Left button clicked, summon a sphere
+			if (event->button.button == SDL_BUTTON_LEFT) {
+				int x;
+				int y;
+				SDL_GetMouseState(&x, &y);
+
+				SDL_Point position;
+				position.x = x;
+				position.y = y;
+				SDL_Color color;
+				color.r = 20;
+				color.g = 20;
+				color.b = 50;
+				color.a = 255;
+				pe->SummonObject(&position, 50, 100, &color);
+			}
 			break;
 		case SDL_KEYDOWN:
 			switch (event->key.keysym.sym) {
