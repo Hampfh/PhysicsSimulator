@@ -2,6 +2,9 @@
 #include <ostream>
 #include <functional>
 
+// Vector functions create by Hampus Hallkvist
+// Apache License 2.0
+
 class Vector2 {
 private:
 	friend std::ostream& operator<<(std::ostream& os, Vector2 vector);
