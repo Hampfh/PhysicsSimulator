@@ -8,16 +8,17 @@ Core::Core() {
 }
 
 int Core::OnExecute() {
+	SDL_Event event;
+
 	if (OnInit() == false) {
 		return -1;
 	}
-	SDL_Event event;
 
 	while (running) {
 		while (SDL_PollEvent(&event)) {
 			OnEvent(&event);
 		}
-		OnLoop(&event);
+		OnLoop();
 		OnRender();
 	}
 	OnCleanUp();
@@ -49,10 +50,36 @@ void Core::OnEvent(SDL_Event* event) {
 	switch (event->type) {
 		case SDL_QUIT:
 			running = false;
-			break;
+			break;			
 		case SDL_MOUSEBUTTONDOWN:
-			// Left button clicked, summon a sphere
+			// Left button
 			if (event->button.button == SDL_BUTTON_LEFT) {
+				// Check if hovering over obect
+				int mouseX, mouseY;
+
+				SDL_GetMouseState(&mouseX, &mouseY);
+				PhysicsObject* object = pe->GetObjectOnPosition(&Vector2(mouseX, mouseY));
+				if (object == nullptr) {
+					// If selectedObject has selection then mark position
+					if (selectedObject != nullptr) {
+						// Add force in the direction
+						Vector2* pos1 = selectedObject->getLocation();
+						Vector2* pos2 = new Vector2(mouseX, mouseY);
+						Vector2 dir = *pos2 - *pos1;
+
+						dir.setMag(0.002);
+
+						selectedObject->ApplyForce(dir);
+					}
+					// Unselect the selectedObject
+					selectedObject = nullptr;
+					break;
+				}
+				selectedObject = object;
+			}
+			// Right button clicked, summon a sphere
+			// == SUMMON A CIRCLE ON CLICK ==
+			else if (event->button.button == SDL_BUTTON_RIGHT) {
 				int x;
 				int y;
 				SDL_GetMouseState(&x, &y);
@@ -79,9 +106,26 @@ void Core::OnEvent(SDL_Event* event) {
 	}
 }
 
-void Core::OnLoop(SDL_Event* event) {
+void Core::OnLoop() {
+
 	if (!pause) {
-		pe->UpdatePhysics(event);
+		pe->UpdatePhysics();
+	}
+
+	int mouseX, mouseY;
+	SDL_GetMouseState(&mouseX, &mouseY);
+
+	PhysicsObject* object = pe->GetObjectOnPosition(&Vector2(mouseX, mouseY));
+	// Mouse is hovering over an object
+	if (object != nullptr) {
+		object->setColor(100, 20, 20);
+	}
+
+	pe->UpdateGraphics();
+
+	// Draw line between selected object and mouse
+	if (selectedObject != nullptr) {
+		SDL_RenderDrawLine(renderer, selectedObject->getX(), selectedObject->getY(), mouseX, mouseY);
 	}
 }
 

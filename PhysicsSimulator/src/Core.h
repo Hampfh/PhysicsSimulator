@@ -16,6 +16,8 @@ private:
 	SDL_Window* window;
 	static SDL_Renderer* renderer;
 
+	PhysicsObject* selectedObject = nullptr;
+
 	PhysicsEngine* pe = nullptr;
 public:
 	Core();
@@ -23,7 +25,7 @@ public:
 public:
 	bool OnInit();
 	void OnEvent(SDL_Event* event);
-	void OnLoop(SDL_Event* event);
+	void OnLoop();
 	void OnRender();
 	void OnCleanUp();
 };

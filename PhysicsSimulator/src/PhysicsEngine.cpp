@@ -4,7 +4,7 @@ SDL_Renderer* Core::renderer;
 
 ////////////////////////////////////////////////// PhysicsObject //////////////////////////////////////////////////////////////
 
-PhysicsObject::PhysicsObject(SDL_Point* position, int radius, int mass, SDL_Color* color) 
+PhysicsObject::PhysicsObject(SDL_Point* position, int radius, int mass, SDL_Color* color)
 : radius(radius), mass(mass), color(*color) {
 	location.Set(position->x, position->y);
 	velocity.Set(0,0);
@@ -30,13 +30,24 @@ void PhysicsObject::DrawCircle() {
 void PhysicsObject::Update() {
 	velocity = velocity + acceleration;
 	location = location + velocity;
-	DrawCircle();
+	// Reset color 
+	color.r = 20;
+	color.g = 20;
+	color.b = 20;
 	acceleration.setMag(0);
+}
+
+void PhysicsObject::setColor(int r, int g, int b, int a) {
+	if (r >= 0) this->color.r = r;
+	if (g >= 0) this->color.g = g;
+	if (b >= 0) this->color.b = b;
+	if (a >= 0) this->color.a = a;
 }
 
 ////////////////////////////////////////////////// PhysicsEngine //////////////////////////////////////////////////////////////
 
-PhysicsEngine::PhysicsEngine(int simulationWidth, int simulationHeight) : simulationWidth(simulationWidth), simulationHeight(simulationHeight) {
+PhysicsEngine::PhysicsEngine(int simulationWidth, int simulationHeight) 
+	: simulationWidth(simulationWidth), simulationHeight(simulationHeight) {
 
 }
 
@@ -51,7 +62,7 @@ PhysicsEngine::~PhysicsEngine() {
 	}
 }
 
-void PhysicsEngine::UpdatePhysics(SDL_Event* event) {
+void PhysicsEngine::UpdatePhysics() {
 	// Temporary variables
 	PhysicsObject* current = firstObject;
 	PhysicsObject* currentMatcher = firstObject;
@@ -76,15 +87,22 @@ void PhysicsEngine::UpdatePhysics(SDL_Event* event) {
 
 			current->ApplyForce(dir);
 
-			std::cout << dir << std::endl;
-
 			currentMatcher = currentMatcher->next;
 		}
+		//std::cout << *current->getVelocity() << std::endl;
 		current->Update();
 		current = current->next;
 	}
 
 	SDL_Delay(1);
+}
+
+void PhysicsEngine::UpdateGraphics() {
+	PhysicsObject* current = firstObject;
+	while (current != nullptr) {
+		current->DrawCircle();
+		current = current->next;
+	}
 }
 
 void PhysicsEngine::AddToQueue(PhysicsObject* object) {
@@ -98,9 +116,19 @@ void PhysicsEngine::AddToQueue(PhysicsObject* object) {
 	}
 }
 
+Vector2 PhysicsEngine::SDL_Point_to_Vec2(SDL_Point* point) {
+	return Vector2(point->x, point->y);
+}
+
 float PhysicsEngine::DistanceDifference(PhysicsObject* point, PhysicsObject* pointTwo) {
 	float differenceX = abs(point->getX() - pointTwo->getX());
 	float differenceY = abs(point->getY() - pointTwo->getY());
+
+	return sqrt(pow(differenceX, 2) + pow(differenceY, 2));
+}
+float PhysicsEngine::DistanceDifference(Vector2* point, Vector2* pointTwo) {
+	float differenceX = abs(point->x() - pointTwo->x());
+	float differenceY = abs(point->y() - pointTwo->y());
 
 	return sqrt(pow(differenceX, 2) + pow(differenceY, 2));
 }
@@ -109,4 +137,21 @@ PhysicsObject* PhysicsEngine::SummonObject(SDL_Point* position, int radius, int 
 	PhysicsObject* newObject = new PhysicsObject(position, radius, mass, color);
 	AddToQueue(newObject);
 	return newObject;
+}
+
+PhysicsObject* PhysicsEngine::GetObjectOnPosition(Vector2* location) {
+	// Temporary variables
+	PhysicsObject* current = firstObject;
+
+	// Go through all objects
+	while (current != nullptr) {
+		
+		int distanceBetween = DistanceDifference(current->getLocation(), location);
+		if (distanceBetween <= current->getRadius()) {
+			return current;
+		}
+
+		current = current->next;
+	}
+	return nullptr;
 }
