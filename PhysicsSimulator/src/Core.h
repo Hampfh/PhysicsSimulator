@@ -11,12 +11,15 @@ private:
 	const int screenWidth = 800;
 	const int screenHeight = 600;
 
+	int mouseX, mouseY;
+
 	bool running;
 	bool pause;
 	SDL_Window* window;
 	static SDL_Renderer* renderer;
 
 	PhysicsObject* selectedObject = nullptr;
+	int selectedObjectAction = 0;
 
 	PhysicsEngine* pe = nullptr;
 public:

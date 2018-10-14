@@ -18,6 +18,7 @@ public:
 	PhysicsObject(SDL_Point* position, int radius, int mass, SDL_Color* color);
 	void ApplyForce(Vector2 force);
 	void DrawCircle();
+	void DisplaySettings();
 	void Update();
 
 	Vector2* getLocation() { return &location; };

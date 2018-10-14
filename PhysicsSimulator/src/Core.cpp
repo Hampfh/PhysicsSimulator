@@ -55,11 +55,15 @@ void Core::OnEvent(SDL_Event* event) {
 			// Left button
 			if (event->button.button == SDL_BUTTON_LEFT) {
 				// Check if hovering over obect
-				int mouseX, mouseY;
-
 				SDL_GetMouseState(&mouseX, &mouseY);
 				PhysicsObject* object = pe->GetObjectOnPosition(&Vector2(mouseX, mouseY));
-				if (object == nullptr) {
+				// If user selects the same object twice then unselect
+				if (object == selectedObject) {
+					// Unselect the selectedObject
+					selectedObject = nullptr;
+					selectedObjectAction = 0;
+				}
+				else if (object == nullptr) {
 					// If selectedObject has selection then mark position
 					if (selectedObject != nullptr) {
 						// Add force in the direction
@@ -73,26 +77,35 @@ void Core::OnEvent(SDL_Event* event) {
 					}
 					// Unselect the selectedObject
 					selectedObject = nullptr;
-					break;
+					selectedObjectAction = 0;
 				}
-				selectedObject = object;
+				else {
+					selectedObject = object;
+					selectedObjectAction = 1;
+				}
 			}
 			// Right button clicked, summon a sphere
 			// == SUMMON A CIRCLE ON CLICK ==
 			else if (event->button.button == SDL_BUTTON_RIGHT) {
-				int x;
-				int y;
-				SDL_GetMouseState(&x, &y);
+				SDL_GetMouseState(&mouseX, &mouseY);
 
-				SDL_Point position;
-				position.x = x;
-				position.y = y;
-				SDL_Color color;
-				color.r = 20;
-				color.g = 20;
-				color.b = 50;
-				color.a = 255;
-				pe->SummonObject(&position, 50, 100, &color);
+				PhysicsObject* object = pe->GetObjectOnPosition(&Vector2(mouseX, mouseY));
+				if (object == nullptr) {
+					// Summon sphere
+					SDL_Point position;
+					position.x = mouseX;
+					position.y = mouseY;
+					SDL_Color color;
+					color.r = 20;
+					color.g = 20;
+					color.b = 50;
+					color.a = 255;
+					pe->SummonObject(&position, 50, 100, &color);
+				}
+				else {
+					selectedObject = object;
+					selectedObjectAction = 2;
+				}
 			}
 			break;
 		case SDL_KEYDOWN:
@@ -100,6 +113,11 @@ void Core::OnEvent(SDL_Event* event) {
 				case SDLK_SPACE:
 					if (pause) pause = false;
 					else pause = true;
+					break;
+				case SDLK_ESCAPE:
+				case SDLK_BACKSPACE:
+					selectedObject = nullptr;
+					selectedObjectAction = 0;
 					break;
 			}
 			break;
@@ -112,7 +130,6 @@ void Core::OnLoop() {
 		pe->UpdatePhysics();
 	}
 
-	int mouseX, mouseY;
 	SDL_GetMouseState(&mouseX, &mouseY);
 
 	PhysicsObject* object = pe->GetObjectOnPosition(&Vector2(mouseX, mouseY));
@@ -124,7 +141,7 @@ void Core::OnLoop() {
 	pe->UpdateGraphics();
 
 	// Draw line between selected object and mouse
-	if (selectedObject != nullptr) {
+	if (selectedObject != nullptr && selectedObjectAction == 1) {
 		SDL_RenderDrawLine(renderer, selectedObject->getX(), selectedObject->getY(), mouseX, mouseY);
 	}
 }

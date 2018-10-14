@@ -26,6 +26,10 @@ void PhysicsObject::DrawCircle() {
 	}
 }
 
+void PhysicsObject::DisplaySettings() {
+
+}
+
 // Updates the single object
 void PhysicsObject::Update() {
 	velocity = velocity + acceleration;
@@ -80,7 +84,11 @@ void PhysicsEngine::UpdatePhysics() {
 			Vector2* pos2 = currentMatcher->getLocation();
 			Vector2 dir = *pos2 - *pos1;
 
-			// Newtons law of gravity
+			/* Newtons law of gravity
+				  m1 * m2
+			F = G --------
+				    r^2
+			*/
 			float forceStrength = 6.672 * pow(10, -11) * ((current->getMass() * currentMatcher->getMass()) / pow(DistanceDifference(current, currentMatcher), 2));
 
 			dir.setMag(forceStrength * 100000);
