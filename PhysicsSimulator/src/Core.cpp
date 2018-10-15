@@ -58,7 +58,7 @@ void Core::OnEvent(SDL_Event* event) {
 				SDL_GetMouseState(&mouseX, &mouseY);
 				PhysicsObject* object = pe->GetObjectOnPosition(&Vector2(mouseX, mouseY));
 				// If user selects the same object twice then unselect
-				if (object == selectedObject) {
+				if (object == selectedObject && object != nullptr && selectedObjectAction == 1) {
 					// Unselect the selectedObject
 					selectedObject = nullptr;
 					selectedObjectAction = 0;
@@ -90,7 +90,13 @@ void Core::OnEvent(SDL_Event* event) {
 				SDL_GetMouseState(&mouseX, &mouseY);
 
 				PhysicsObject* object = pe->GetObjectOnPosition(&Vector2(mouseX, mouseY));
-				if (object == nullptr) {
+				if (object == selectedObject && object != nullptr && selectedObjectAction == 2) {
+					// Unselect the selectedObject
+					selectedObject = nullptr;
+					selectedObjectAction = 0;
+					SDL_StopTextInput();
+				}
+				else if (object == nullptr) {
 					// Summon sphere
 					SDL_Point position;
 					position.x = mouseX;
@@ -108,12 +114,17 @@ void Core::OnEvent(SDL_Event* event) {
 				}
 			}
 			break;
+		case SDL_TEXTINPUT:
+		case SDL_TEXTEDITING:
+			std::cout << event->edit.text << std::endl;
+			break;
 		case SDL_KEYDOWN:
 			switch (event->key.keysym.sym) {
 				case SDLK_SPACE:
 					if (pause) pause = false;
 					else pause = true;
 					break;
+				// Unselect all objects if escape or backspace is clicked
 				case SDLK_ESCAPE:
 				case SDLK_BACKSPACE:
 					selectedObject = nullptr;
@@ -143,6 +154,18 @@ void Core::OnLoop() {
 	// Draw line between selected object and mouse
 	if (selectedObject != nullptr && selectedObjectAction == 1) {
 		SDL_RenderDrawLine(renderer, selectedObject->getX(), selectedObject->getY(), mouseX, mouseY);
+	}
+	else if (selectedObject != nullptr && selectedObjectAction == 2) {
+		SDL_Rect rect;
+		rect.x = selectedObject->getX();
+		rect.y = selectedObject->getY();
+		rect.w = 200;
+		rect.h = 200;
+		SDL_SetRenderDrawColor(renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
+		SDL_RenderFillRect(renderer, &rect);
+		SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+		SDL_StartTextInput();
+		SDL_SetTextInputRect(&rect);
 	}
 }
 
