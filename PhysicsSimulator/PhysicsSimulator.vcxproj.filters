@@ -39,4 +39,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <Font Include="src\includes\fonts\Roboto\Roboto-Black.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-BlackItalic.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-Bold.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-BoldItalic.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-Italic.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-Light.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-LightItalic.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-Medium.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-MediumItalic.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-Regular.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-Thin.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-ThinItalic.ttf" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="src\includes\fonts\Roboto\LICENSE.txt" />
+  </ItemGroup>
 </Project>

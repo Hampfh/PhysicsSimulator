@@ -160,6 +160,23 @@
     <ClInclude Include="src\PhysicsEngine.h" />
     <ClInclude Include="src\Core.h" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="src\includes\fonts\Roboto\LICENSE.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="src\includes\fonts\Roboto\Roboto-Black.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-BlackItalic.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-Bold.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-BoldItalic.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-Italic.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-Light.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-LightItalic.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-Medium.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-MediumItalic.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-Regular.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-Thin.ttf" />
+    <Font Include="src\includes\fonts\Roboto\Roboto-ThinItalic.ttf" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
