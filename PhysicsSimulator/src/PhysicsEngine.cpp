@@ -97,7 +97,6 @@ void PhysicsEngine::UpdatePhysics() {
 
 			currentMatcher = currentMatcher->next;
 		}
-		//std::cout << *current->getVelocity() << std::endl;
 		current->Update();
 		current = current->next;
 	}

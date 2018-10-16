@@ -52,7 +52,7 @@ void Core::OnEvent(SDL_Event* event) {
 			running = false;
 			break;			
 		case SDL_MOUSEBUTTONDOWN:
-			// Left button
+			// Left button clicked
 			if (event->button.button == SDL_BUTTON_LEFT) {
 				// Check if hovering over obect
 				SDL_GetMouseState(&mouseX, &mouseY);
@@ -84,8 +84,7 @@ void Core::OnEvent(SDL_Event* event) {
 					selectedObjectAction = 1;
 				}
 			}
-			// Right button clicked, summon a sphere
-			// == SUMMON A CIRCLE ON CLICK ==
+			// Right button clicked
 			else if (event->button.button == SDL_BUTTON_RIGHT) {
 				SDL_GetMouseState(&mouseX, &mouseY);
 
@@ -94,7 +93,6 @@ void Core::OnEvent(SDL_Event* event) {
 					// Unselect the selectedObject
 					selectedObject = nullptr;
 					selectedObjectAction = 0;
-					SDL_StopTextInput();
 				}
 				else if (object == nullptr) {
 					// Summon sphere
@@ -116,7 +114,10 @@ void Core::OnEvent(SDL_Event* event) {
 			break;
 		case SDL_TEXTINPUT:
 		case SDL_TEXTEDITING:
-			std::cout << event->edit.text << std::endl;
+			if (selectedObjectAction == 2) {
+				
+				//std::cout << event->edit.text << std::endl;
+			}
 			break;
 		case SDL_KEYDOWN:
 			switch (event->key.keysym.sym) {
@@ -136,6 +137,38 @@ void Core::OnEvent(SDL_Event* event) {
 }
 
 void Core::OnLoop() {
+	TTF_Init();
+
+	SDL_Color text_color = { 0, 150, 0, 255 };
+
+	TTF_Font *font = TTF_OpenFont("src/includes/arial.ttf", 50);
+	if (!font) {
+		std::cout << "Failed to load font" << std::endl;
+	}
+	auto text_surface = TTF_RenderText_Solid(font, "hellö", text_color);
+	if (!text_surface) {
+		std::cout << "Failed to create text surface" << std::endl;
+	}
+	auto *text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
+	if (!text_texture) {
+		std::cout << "Failed to create text texture" << std::endl;
+	}
+	SDL_FreeSurface(text_surface);
+	TTF_CloseFont(font);
+
+	SDL_Rect rect;
+	rect.x = 10;
+	rect.y = 10;
+	rect.w = 100;
+	rect.h = 100;
+
+	if (SDL_QueryTexture(text_texture, nullptr, nullptr, &rect.w, &rect.h) != 0) {
+		std::cout << "QueryTexture not loading" << std::endl;
+	}
+
+	SDL_RenderCopy(renderer, text_texture, nullptr, &rect);
+	// Delete the texture after display
+	SDL_DestroyTexture(text_texture);
 
 	if (!pause) {
 		pe->UpdatePhysics();
@@ -164,8 +197,6 @@ void Core::OnLoop() {
 		SDL_SetRenderDrawColor(renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
 		SDL_RenderFillRect(renderer, &rect);
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
-		SDL_StartTextInput();
-		SDL_SetTextInputRect(&rect);
 	}
 }
 
@@ -179,6 +210,7 @@ void Core::OnRender() {
 	}
 }
 void Core::OnCleanUp() {
+	TTF_Quit();
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
