@@ -1,21 +1,20 @@
 #include "PhysicsEngine.h"
+#include <string>
 
 ////////////////////////////////////////////////// PhysicsObject //////////////////////////////////////////////////////////////
 
-PhysicsObject::PhysicsObject(SDL_Point* position, const int radius, const float mass, SDL_Color* color)
-: radius_(radius), mass_(mass), color_(*color) {
+PhysicsObject::PhysicsObject(const int id, SDL_Point* position, const int radius, const float mass, SDL_Color* color)
+: objectId_(id), radius_(radius), mass_(mass), color_(*color) {
 	location_.Set(static_cast<float>(position->x), static_cast<float>(position->y));
 	velocity_.Set(0,0);
 	acceleration_.Set(0, 0);
 }
 
-void PhysicsObject::ApplyForce(Vector2 force) {
-	//std::cout << "Current: " << acceleration << " + " << force;
+void PhysicsObject::ApplyForce(const Vector2 force) {
 	acceleration_ = acceleration_ + force;
-	//std::cout << " " << acceleration << std::endl;
 }
 
-void PhysicsObject::DrawCircle() {
+void PhysicsObject::DrawCircle() const {
 	for (double dy = 1; dy <= radius_; dy += 1) {
 		const double dx = floor(sqrt((2.0 * radius_ * dy) - (dy * dy)));
 		SDL_SetRenderDrawColor(Core::renderer_, color_.r, color_.g, color_.b, color_.a);
@@ -35,8 +34,62 @@ void PhysicsObject::DrawCircle() {
 	}
 }
 
-void PhysicsObject::DisplaySettings() {
+TextPackage PhysicsObject::PrepareObjectSettings() {
 
+	TextPackage package;
+	package.settingsBox = &this->settingsBox_;
+
+	int setting_num = 1;
+	const int setting_offset = 5;
+	const int setting_font_size = 15;
+
+	TextString setting;
+
+	// Create ID
+	setting.settingTextBox.x = settingsBox_.x + 10;
+	setting.settingTextBox.y = settingsBox_.y + setting_num * setting_font_size;
+	setting.settingTextBox.w = settingsBox_.w;
+	setting.settingTextBox.h = setting_font_size + setting_offset;
+	setting.text = "ID: " + std::to_string(objectId_);
+	setting.fontPath = "src/includes/fonts/Roboto/Roboto-Bold.ttf";
+	setting.fontSize = setting_font_size;
+	
+	// Insert setting into package
+	package.settings[setting_num - 1] = setting;
+	setting_num++;
+
+	// Create mass setting
+	setting.settingTextBox.x = settingsBox_.x + 10;
+	setting.settingTextBox.y = settingsBox_.y + setting_num * setting_font_size;
+	setting.settingTextBox.w = settingsBox_.w;
+	setting.settingTextBox.h = setting_font_size + setting_offset;
+	setting.text = "Mass: " + std::to_string(mass_);
+	setting.fontPath = "src/includes/fonts/Roboto/Roboto-Regular.ttf";
+	setting.fontSize = setting_font_size;
+
+	// Insert setting into package
+	package.settings[setting_num - 1] = setting;
+	setting_num++;
+
+	// Create radius setting
+	setting.settingTextBox.x = settingsBox_.x + 10;
+	setting.settingTextBox.y = settingsBox_.y + setting_num * setting_font_size;
+	setting.settingTextBox.w = settingsBox_.w;
+	setting.settingTextBox.h = setting_font_size + setting_offset;
+	setting.text = "Radius: " + std::to_string(radius_);
+	setting.fontPath = "src/includes/fonts/Roboto/Roboto-Regular.ttf";
+	setting.fontSize = setting_font_size;
+	
+	// Insert setting into package
+	package.settings[setting_num - 1] = setting;
+
+	// Settings container
+	settingsBox_.x = this->GetX();
+	settingsBox_.y = this->GetY();
+	settingsBox_.w = 200;
+	settingsBox_.h = setting_num * setting_font_size + 30;
+
+	return package;
 }
 
 // Updates the single object
@@ -151,7 +204,14 @@ float PhysicsEngine::DistanceDifference(Vector2* point, Vector2* point_two) {
 }
 
 PhysicsObject* PhysicsEngine::SummonObject(SDL_Point* position, const int radius, const int mass, SDL_Color* color) {
-	PhysicsObject* const new_object = new PhysicsObject{position, radius, static_cast<float>(mass), color};
+	int new_id;
+	if (firstObject_ == nullptr) {
+		new_id = 0;
+	} else {
+		new_id = lastObject_->GetId() + 1;
+	}
+
+	PhysicsObject* const new_object = new PhysicsObject{new_id, position, radius, static_cast<float>(mass), color};
 	AddToQueue(new_object);
 	return new_object;
 }

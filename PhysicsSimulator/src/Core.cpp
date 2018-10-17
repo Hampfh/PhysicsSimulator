@@ -1,6 +1,5 @@
 #include "Core.h"
-#include "PhysicsEngine.h"
-#include "TTF_FontDisplay.h"
+#include <vector>
 
 SDL_Renderer* Core::renderer_;
 
@@ -147,11 +146,13 @@ void Core::OnEvent(SDL_Event* event) {
 }
 
 void Core::OnLoop() {
+	// Create console thread
+	std::thread console_input(&Core::CheckConsole, Core());
+	console_input.detach();
 
 	if (!pause_) {
 		pe_->UpdatePhysics();
 	}
-
 	SDL_GetMouseState(&mouseX_, &mouseY_);
 
 	PhysicsObject* object = pe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_));
@@ -167,19 +168,8 @@ void Core::OnLoop() {
 		SDL_RenderDrawLine(renderer_, static_cast<int>(selectedObject_->GetX()), static_cast<int>(selectedObject_->GetY()), mouseX_, mouseY_);
 	}
 	else if (selectedObject_ != nullptr && selectedObjectAction_ == 2) {
-		SDL_Rect rect;
-		rect.x = static_cast<int>(selectedObject_->GetX());
-		rect.y = static_cast<int>(selectedObject_->GetY());
-		rect.w = 200;
-		rect.h = 200;
-		SDL_SetRenderDrawColor(renderer_, 200, 200, 200, SDL_ALPHA_OPAQUE);
-		SDL_RenderFillRect(renderer_, &rect);
-		SDL_SetRenderDrawColor(renderer_, 0, 0, 0, SDL_ALPHA_OPAQUE);
-
-		std::string message = "HELLO THERE";
-		std::string font_path = "src/includes/fonts/Roboto/Roboto-Black.ttf";
-		textDisplay_->CreateText({ rect.x + 10, rect.y + 10 }, { 100, 100 }, &message, &font_path, 20);
-		textDisplay_->DisplayText();
+		TextPackage package = selectedObject_->PrepareObjectSettings();
+		DrawSettingPackage(&package);
 	}
 }
 
@@ -197,5 +187,46 @@ void Core::OnCleanUp() const {
 	SDL_DestroyRenderer(renderer_);
 	SDL_DestroyWindow(window_);
 	SDL_Quit();
+}
+
+void Core::DrawSettingPackage(TextPackage* package) const {
+	
+	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, SDL_ALPHA_OPAQUE);
+	SDL_RenderFillRect(renderer_, package->settingsBox);
+
+	for (int i = 0; i < package->package_size; i++) {
+		auto current_setting = package->settings[i];
+		textDisplay_->CreateText(
+			current_setting.settingTextBox,
+			&current_setting.text,
+			&current_setting.fontPath,
+			current_setting.fontSize
+		);
+		textDisplay_->DisplayText();
+	}
+}
+
+void Core::CheckConsole() {
+	char input[10];
+	std::cin >> input;
+	ConsoleInterpretation(input);
+	CheckConsole();
+}
+
+void Core::ConsoleInterpretation(std::string command) {
+	std::vector<std::string> internal;
+	std::stringstream ss(command);
+	std::string tok;
+
+	while(std::getline(ss, tok, ' ')) {
+		internal.push_back(tok);
+	}
+
+	for(int i = 0; i < internal.size(); ++i) {
+		std::cout << internal[i] << std::endl;
+	}
+
+
+	return;
 }
 

@@ -3,7 +3,24 @@
 #include <cmath>
 #include "includes/Vector.h"
 
+const int setting_count = 3;
+
+struct TextString {
+	std::string text;
+	std::string fontPath;
+	int fontSize = 0;
+	SDL_Rect settingTextBox;
+};
+
+struct TextPackage {
+	int package_size = setting_count;
+	TextString settings[setting_count];
+	SDL_Rect* settingsBox = nullptr;
+};
+
 class PhysicsObject {
+	const int objectId_;
+
 	Vector2 location_;
 	Vector2 velocity_;
 	Vector2 acceleration_;
@@ -11,12 +28,14 @@ class PhysicsObject {
 	float mass_;
 	SDL_Color color_;
 
+	SDL_Rect settingsBox_;
+
 public:
 	PhysicsObject* next = nullptr;
-	PhysicsObject(SDL_Point* position, int radius, float mass, SDL_Color* color);
+	PhysicsObject(int id, SDL_Point* position, int radius, float mass, SDL_Color* color);
 	void ApplyForce(Vector2 force);
-	void DrawCircle();
-	void DisplaySettings();
+	void DrawCircle() const;
+	TextPackage PrepareObjectSettings();
 	void Update();
 
 	Vector2* GetLocation() { return &location_; };
@@ -27,6 +46,7 @@ public:
 	float GetMass() const { return mass_; };
 	float GetX() const { return location_.x(); };
 	float GetY() const { return location_.y(); };
+	int GetId() const { return objectId_; };
 
 	void SetColor(int r = -1, int g = -1, int b = -1, int a = -1);
 };

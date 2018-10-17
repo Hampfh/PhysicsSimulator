@@ -17,7 +17,7 @@ void FontDisplay::SetFontColor(SDL_Color* color) {
 	this->currentColor_ = color;
 }
 
-int FontDisplay::CreateText(const SDL_Point location, const SDL_Point size, std::string* message, std::string* font_path, const int font_size) {
+int FontDisplay::CreateText(const SDL_Rect box, std::string* message, std::string* font_path, const int font_size) {
 	font_ = TTF_OpenFont(font_path->c_str(), font_size);
 	// Test if font was successfully imported 
 	if (!font_) {
@@ -43,10 +43,10 @@ int FontDisplay::CreateText(const SDL_Point location, const SDL_Point size, std:
 	SDL_FreeSurface(surface_);
 	TTF_CloseFont(font_);
 
-	textRect_->x = location.x;
-	textRect_->y = location.y;
-	textRect_->w = size.x;
-	textRect_->h = size.y;
+	textRect_->x = box.x;
+	textRect_->y = box.y;
+	textRect_->w = box.x;
+	textRect_->h = box.y;
 
 	if (SDL_QueryTexture(texture_, nullptr, nullptr, &textRect_->w, &textRect_->h) != 0) {
 		std::cout << "QueryTexture not loading" << std::endl;

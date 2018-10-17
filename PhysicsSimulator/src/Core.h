@@ -1,6 +1,14 @@
 #pragma once
 #include <SDL2/SDL.h>
+#include "PhysicsEngine.h"
+#include "TTF_FontDisplay.h"
 #include <iostream>
+// For console reading
+#include <vector>
+#include <thread>
+#include <sstream>  
+
+struct TextPackage;
 
 class Core {
 	friend class PhysicsEngine;
@@ -30,6 +38,10 @@ public:
 	void OnLoop();
 	void OnRender() const;
 	void OnCleanUp() const;
+
+	void DrawSettingPackage(TextPackage* package) const;
+	void CheckConsole();
+	void ConsoleInterpretation(std::string command);
 };
 
 

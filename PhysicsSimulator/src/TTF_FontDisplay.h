@@ -13,6 +13,6 @@ public:
 	FontDisplay();
 	~FontDisplay();
 	void SetFontColor(SDL_Color* color);
-	int CreateText(SDL_Point location, SDL_Point size, std::string* message, std::string* font_path, int font_size);
+	int CreateText(SDL_Rect box, std::string* message, std::string* font_path, int font_size);
 	void DisplayText() const;
 };
