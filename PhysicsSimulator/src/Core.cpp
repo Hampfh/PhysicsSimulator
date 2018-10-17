@@ -49,6 +49,10 @@ bool Core::OnInit() {
 
 	textDisplay_ = new FontDisplay;
 
+	// Create console thread
+	std::thread console_input(&Core::CheckConsole, Core());
+	console_input.detach();
+
 	return true;
 }
 
@@ -68,6 +72,7 @@ void Core::OnEvent(SDL_Event* event) {
 				// Unselect the selectedObject
 				selectedObject_ = nullptr;
 				selectedObjectAction_ = 0;
+				pause_ = false;
 			}
 			else if (object == nullptr) {
 				// If selectedObject has selection then mark position
@@ -84,6 +89,7 @@ void Core::OnEvent(SDL_Event* event) {
 				// Unselect the selectedObject
 				selectedObject_ = nullptr;
 				selectedObjectAction_ = 0;
+				pause_ = false;
 			}
 			else {
 				selectedObject_ = object;
@@ -99,6 +105,7 @@ void Core::OnEvent(SDL_Event* event) {
 				// Unselect the selectedObject
 				selectedObject_ = nullptr;
 				selectedObjectAction_ = 0;
+				pause_ = false;
 			}
 			else if (object == nullptr) {
 				// Summon sphere
@@ -113,14 +120,17 @@ void Core::OnEvent(SDL_Event* event) {
 				pe_->SummonObject(&position, 50, 100, &color);
 			}
 			else {
+				// Assign object to settingsview
 				selectedObject_ = object;
 				selectedObjectAction_ = 2;
+				pause_ = true;
 			}
 		}
 		break;
 	case SDL_TEXTINPUT:
 	case SDL_TEXTEDITING:
 		if (selectedObjectAction_ == 2) {
+			pause_ = false;
 			//std::cout << event->edit.text << std::endl;
 		}
 		break;
@@ -135,6 +145,7 @@ void Core::OnEvent(SDL_Event* event) {
 		case SDLK_BACKSPACE:
 			selectedObject_ = nullptr;
 			selectedObjectAction_ = 0;
+			pause_ = false;
 			break;
 		default:
 			break;
@@ -146,21 +157,18 @@ void Core::OnEvent(SDL_Event* event) {
 }
 
 void Core::OnLoop() {
-	// Create console thread
-	std::thread console_input(&Core::CheckConsole, Core());
-	console_input.detach();
-
 	if (!pause_) {
 		pe_->UpdatePhysics();
 	}
 	SDL_GetMouseState(&mouseX_, &mouseY_);
+	Vector2 mousePos(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 
-	PhysicsObject* object = pe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_));
+	PhysicsObject* object = pe_->GetObjectOnPosition(&mousePos);
 	// Mouse is hovering over an object
 	if (object != nullptr) {
 		object->SetColor(100, 20, 20);
 	}
-
+	
 	pe_->UpdateGraphics();
 
 	// Draw line between selected object and mouse
@@ -174,13 +182,11 @@ void Core::OnLoop() {
 }
 
 void Core::OnRender() const {
-	if (!pause_) {
-		SDL_RenderPresent(renderer_);
+	SDL_RenderPresent(renderer_);
 
-		SDL_SetRenderDrawColor(renderer_, 255, 255, 255, SDL_ALPHA_OPAQUE);
+	SDL_SetRenderDrawColor(renderer_, 255, 255, 255, SDL_ALPHA_OPAQUE);
 
-		SDL_RenderClear(renderer_);
-	}
+	SDL_RenderClear(renderer_);
 }
 
 void Core::OnCleanUp() const {
@@ -190,7 +196,6 @@ void Core::OnCleanUp() const {
 }
 
 void Core::DrawSettingPackage(TextPackage* package) const {
-	
 	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, SDL_ALPHA_OPAQUE);
 	SDL_RenderFillRect(renderer_, package->settingsBox);
 
@@ -225,7 +230,6 @@ void Core::ConsoleInterpretation(std::string command) {
 	for(int i = 0; i < internal.size(); ++i) {
 		std::cout << internal[i] << std::endl;
 	}
-
 
 	return;
 }

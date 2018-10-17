@@ -8,6 +8,7 @@ PhysicsObject::PhysicsObject(const int id, SDL_Point* position, const int radius
 	location_.Set(static_cast<float>(position->x), static_cast<float>(position->y));
 	velocity_.Set(0,0);
 	acceleration_.Set(0, 0);
+	defaultColor_ = color_;
 }
 
 void PhysicsObject::ApplyForce(const Vector2 force) {
@@ -96,10 +97,6 @@ TextPackage PhysicsObject::PrepareObjectSettings() {
 void PhysicsObject::Update() {
 	velocity_ = velocity_ + acceleration_;
 	location_ = location_ + velocity_;
-	// Reset color 
-	color_.r = 20;
-	color_.g = 20;
-	color_.b = 20;
 	acceleration_.setMag(0);
 }
 
@@ -108,6 +105,10 @@ void PhysicsObject::SetColor(int r, int g, int b, int a) {
 	if (g >= 0) this->color_.g = g;
 	if (b >= 0) this->color_.b = b;
 	if (a >= 0) this->color_.a = a;
+}
+
+void PhysicsObject::ResetColor() {
+	color_ = defaultColor_;
 }
 
 ////////////////////////////////////////////////// PhysicsEngine //////////////////////////////////////////////////////////////
@@ -170,6 +171,7 @@ void PhysicsEngine::UpdateGraphics() {
 	PhysicsObject* current = firstObject_;
 	while (current != nullptr) {
 		current->DrawCircle();
+		current->ResetColor();
 		current = current->next;
 	}
 }

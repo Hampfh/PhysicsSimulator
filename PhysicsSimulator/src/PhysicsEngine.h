@@ -27,6 +27,7 @@ class PhysicsObject {
 	int radius_;
 	float mass_;
 	SDL_Color color_;
+	SDL_Color defaultColor_;
 
 	SDL_Rect settingsBox_;
 
@@ -49,6 +50,7 @@ public:
 	int GetId() const { return objectId_; };
 
 	void SetColor(int r = -1, int g = -1, int b = -1, int a = -1);
+	void ResetColor();
 };
 
 class PhysicsEngine {
