@@ -1,35 +1,36 @@
 #pragma once
-#include <SDL2\SDL.h>
-#include <SDL2_TTF\SDL_ttf.h>
-#include <stdio.h>
+#include <SDL2/SDL.h>
 #include <iostream>
 
 class Core {
-private:
 	friend class PhysicsEngine;
 	friend class PhysicsObject;
-	
-	const int screenWidth = 800;
-	const int screenHeight = 600;
+	friend class FontDisplay;
 
-	int mouseX, mouseY;
+	const int screenWidth_ = 800;
+	const int screenHeight_ = 600;
 
-	bool running;
-	bool pause;
-	SDL_Window* window;
-	static SDL_Renderer* renderer;
+	int mouseX_, mouseY_;
 
-	PhysicsObject* selectedObject = nullptr;
-	int selectedObjectAction = 0;
+	bool running_;
+	bool pause_;
+	SDL_Window* window_;
+	static SDL_Renderer* renderer_;
 
-	PhysicsEngine* pe = nullptr;
+	PhysicsObject* selectedObject_ = nullptr;
+	int selectedObjectAction_ = 0;
+
+	PhysicsEngine* pe_ = nullptr;
+	FontDisplay* textDisplay_ = nullptr;
 public:
 	Core();
 	int OnExecute();
-public:
 	bool OnInit();
 	void OnEvent(SDL_Event* event);
 	void OnLoop();
-	void OnRender();
-	void OnCleanUp();
+	void OnRender() const;
+	void OnCleanUp() const;
 };
+
+
+

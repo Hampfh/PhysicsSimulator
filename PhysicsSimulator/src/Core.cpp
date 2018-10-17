@@ -1,20 +1,25 @@
 #include "Core.h"
 #include "PhysicsEngine.h"
+#include "TTF_FontDisplay.h"
+
+SDL_Renderer* Core::renderer_;
 
 Core::Core() {
-	window = NULL;
-	running = true;
-	pause = false;
+	window_ = nullptr;
+	running_ = true;
+	pause_ = false;
+	mouseX_ = 0;
+	mouseY_ = 0;
 }
 
 int Core::OnExecute() {
 	SDL_Event event;
 
-	if (OnInit() == false) {
+	if (!OnInit()) {
 		return -1;
 	}
 
-	while (running) {
+	while (running_) {
 		while (SDL_PollEvent(&event)) {
 			OnEvent(&event);
 		}
@@ -31,187 +36,166 @@ bool Core::OnInit() {
 		return false;
 	}
 
-	window = SDL_CreateWindow("Physics Simulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, SDL_WINDOW_OPENGL);
+	window_ = SDL_CreateWindow("Physics Simulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth_,
+	                           screenHeight_, SDL_WINDOW_OPENGL);
 
-	if (window == NULL) {
+	if (window_ == nullptr) {
 		printf("Could not create window %s\n", SDL_GetError());
-		return 1;
 		return false;
 	}
 
-	renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);
 
-	pe = new PhysicsEngine(screenWidth, screenHeight);
+	pe_ = new PhysicsEngine(screenWidth_, screenHeight_);
+
+	textDisplay_ = new FontDisplay;
 
 	return true;
 }
 
 void Core::OnEvent(SDL_Event* event) {
 	switch (event->type) {
-		case SDL_QUIT:
-			running = false;
-			break;			
-		case SDL_MOUSEBUTTONDOWN:
-			// Left button clicked
-			if (event->button.button == SDL_BUTTON_LEFT) {
-				// Check if hovering over obect
-				SDL_GetMouseState(&mouseX, &mouseY);
-				PhysicsObject* object = pe->GetObjectOnPosition(&Vector2(mouseX, mouseY));
-				// If user selects the same object twice then unselect
-				if (object == selectedObject && object != nullptr && selectedObjectAction == 1) {
-					// Unselect the selectedObject
-					selectedObject = nullptr;
-					selectedObjectAction = 0;
-				}
-				else if (object == nullptr) {
-					// If selectedObject has selection then mark position
-					if (selectedObject != nullptr) {
-						// Add force in the direction
-						Vector2* pos1 = selectedObject->getLocation();
-						Vector2* pos2 = new Vector2(mouseX, mouseY);
-						Vector2 dir = *pos2 - *pos1;
-
-						dir.setMag(0.002);
-
-						selectedObject->ApplyForce(dir);
-					}
-					// Unselect the selectedObject
-					selectedObject = nullptr;
-					selectedObjectAction = 0;
-				}
-				else {
-					selectedObject = object;
-					selectedObjectAction = 1;
-				}
+	case SDL_QUIT:
+		running_ = false;
+		break;
+	case SDL_MOUSEBUTTONDOWN:
+		// Left button clicked
+		if (event->button.button == SDL_BUTTON_LEFT) {
+			// Check if hovering over obect
+			SDL_GetMouseState(&mouseX_, &mouseY_);
+			PhysicsObject* object = pe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_));
+			// If user selects the same object twice then unselect
+			if (object == selectedObject_ && object != nullptr && selectedObjectAction_ == 1) {
+				// Unselect the selectedObject
+				selectedObject_ = nullptr;
+				selectedObjectAction_ = 0;
 			}
+			else if (object == nullptr) {
+				// If selectedObject has selection then mark position
+				if (selectedObject_ != nullptr) {
+					// Add force in the direction
+					Vector2* pos1 = selectedObject_->GetLocation();
+					Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
+					Vector2 dir = pos2 - *pos1;
+
+					dir.setMag(0.002f);
+
+					selectedObject_->ApplyForce(dir);
+				}
+				// Unselect the selectedObject
+				selectedObject_ = nullptr;
+				selectedObjectAction_ = 0;
+			}
+			else {
+				selectedObject_ = object;
+				selectedObjectAction_ = 1;
+			}
+		}
 			// Right button clicked
-			else if (event->button.button == SDL_BUTTON_RIGHT) {
-				SDL_GetMouseState(&mouseX, &mouseY);
+		else if (event->button.button == SDL_BUTTON_RIGHT) {
+			SDL_GetMouseState(&mouseX_, &mouseY_);
 
-				PhysicsObject* object = pe->GetObjectOnPosition(&Vector2(mouseX, mouseY));
-				if (object == selectedObject && object != nullptr && selectedObjectAction == 2) {
-					// Unselect the selectedObject
-					selectedObject = nullptr;
-					selectedObjectAction = 0;
-				}
-				else if (object == nullptr) {
-					// Summon sphere
-					SDL_Point position;
-					position.x = mouseX;
-					position.y = mouseY;
-					SDL_Color color;
-					color.r = 20;
-					color.g = 20;
-					color.b = 50;
-					color.a = 255;
-					pe->SummonObject(&position, 50, 100, &color);
-				}
-				else {
-					selectedObject = object;
-					selectedObjectAction = 2;
-				}
+			PhysicsObject* object = pe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_));
+			if (object == selectedObject_ && object != nullptr && selectedObjectAction_ == 2) {
+				// Unselect the selectedObject
+				selectedObject_ = nullptr;
+				selectedObjectAction_ = 0;
 			}
-			break;
-		case SDL_TEXTINPUT:
-		case SDL_TEXTEDITING:
-			if (selectedObjectAction == 2) {
-				
-				//std::cout << event->edit.text << std::endl;
+			else if (object == nullptr) {
+				// Summon sphere
+				SDL_Point position;
+				position.x = mouseX_;
+				position.y = mouseY_;
+				SDL_Color color;
+				color.r = 20;
+				color.g = 20;
+				color.b = 50;
+				color.a = 255;
+				pe_->SummonObject(&position, 50, 100, &color);
 			}
-			break;
-		case SDL_KEYDOWN:
-			switch (event->key.keysym.sym) {
-				case SDLK_SPACE:
-					if (pause) pause = false;
-					else pause = true;
-					break;
-				// Unselect all objects if escape or backspace is clicked
-				case SDLK_ESCAPE:
-				case SDLK_BACKSPACE:
-					selectedObject = nullptr;
-					selectedObjectAction = 0;
-					break;
+			else {
+				selectedObject_ = object;
+				selectedObjectAction_ = 2;
 			}
+		}
+		break;
+	case SDL_TEXTINPUT:
+	case SDL_TEXTEDITING:
+		if (selectedObjectAction_ == 2) {
+			//std::cout << event->edit.text << std::endl;
+		}
+		break;
+	case SDL_KEYDOWN:
+		switch (event->key.keysym.sym) {
+		case SDLK_SPACE:
+			if (pause_) pause_ = false;
+			else pause_ = true;
 			break;
+			// Unselect all objects if escape or backspace is clicked
+		case SDLK_ESCAPE:
+		case SDLK_BACKSPACE:
+			selectedObject_ = nullptr;
+			selectedObjectAction_ = 0;
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
 	}
 }
 
 void Core::OnLoop() {
-	TTF_Init();
 
-	SDL_Color text_color = { 0, 150, 0, 255 };
-
-	TTF_Font *font = TTF_OpenFont("src/includes/arial.ttf", 50);
-	if (!font) {
-		std::cout << "Failed to load font" << std::endl;
-	}
-	auto text_surface = TTF_RenderText_Solid(font, "hellö", text_color);
-	if (!text_surface) {
-		std::cout << "Failed to create text surface" << std::endl;
-	}
-	auto *text_texture = SDL_CreateTextureFromSurface(renderer, text_surface);
-	if (!text_texture) {
-		std::cout << "Failed to create text texture" << std::endl;
-	}
-	SDL_FreeSurface(text_surface);
-	TTF_CloseFont(font);
-
-	SDL_Rect rect;
-	rect.x = 10;
-	rect.y = 10;
-	rect.w = 100;
-	rect.h = 100;
-
-	if (SDL_QueryTexture(text_texture, nullptr, nullptr, &rect.w, &rect.h) != 0) {
-		std::cout << "QueryTexture not loading" << std::endl;
+	if (!pause_) {
+		pe_->UpdatePhysics();
 	}
 
-	SDL_RenderCopy(renderer, text_texture, nullptr, &rect);
-	// Delete the texture after display
-	SDL_DestroyTexture(text_texture);
+	SDL_GetMouseState(&mouseX_, &mouseY_);
 
-	if (!pause) {
-		pe->UpdatePhysics();
-	}
-
-	SDL_GetMouseState(&mouseX, &mouseY);
-
-	PhysicsObject* object = pe->GetObjectOnPosition(&Vector2(mouseX, mouseY));
+	PhysicsObject* object = pe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_));
 	// Mouse is hovering over an object
 	if (object != nullptr) {
-		object->setColor(100, 20, 20);
+		object->SetColor(100, 20, 20);
 	}
 
-	pe->UpdateGraphics();
+	pe_->UpdateGraphics();
 
 	// Draw line between selected object and mouse
-	if (selectedObject != nullptr && selectedObjectAction == 1) {
-		SDL_RenderDrawLine(renderer, selectedObject->getX(), selectedObject->getY(), mouseX, mouseY);
+	if (selectedObject_ != nullptr && selectedObjectAction_ == 1) {
+		SDL_RenderDrawLine(renderer_, static_cast<int>(selectedObject_->GetX()), static_cast<int>(selectedObject_->GetY()), mouseX_, mouseY_);
 	}
-	else if (selectedObject != nullptr && selectedObjectAction == 2) {
+	else if (selectedObject_ != nullptr && selectedObjectAction_ == 2) {
 		SDL_Rect rect;
-		rect.x = selectedObject->getX();
-		rect.y = selectedObject->getY();
+		rect.x = static_cast<int>(selectedObject_->GetX());
+		rect.y = static_cast<int>(selectedObject_->GetY());
 		rect.w = 200;
 		rect.h = 200;
-		SDL_SetRenderDrawColor(renderer, 200, 200, 200, SDL_ALPHA_OPAQUE);
-		SDL_RenderFillRect(renderer, &rect);
-		SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+		SDL_SetRenderDrawColor(renderer_, 200, 200, 200, SDL_ALPHA_OPAQUE);
+		SDL_RenderFillRect(renderer_, &rect);
+		SDL_SetRenderDrawColor(renderer_, 0, 0, 0, SDL_ALPHA_OPAQUE);
+
+		std::string message = "HELLO THERE";
+		std::string font_path = "src/includes/fonts/Roboto/Roboto-Black.ttf";
+		textDisplay_->CreateText({ rect.x + 10, rect.y + 10 }, { 100, 100 }, &message, &font_path, 20);
+		textDisplay_->DisplayText();
 	}
 }
 
-void Core::OnRender() {
-	if (!pause) {
-		SDL_RenderPresent(renderer);
+void Core::OnRender() const {
+	if (!pause_) {
+		SDL_RenderPresent(renderer_);
 
-		SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
+		SDL_SetRenderDrawColor(renderer_, 255, 255, 255, SDL_ALPHA_OPAQUE);
 
-		SDL_RenderClear(renderer);
+		SDL_RenderClear(renderer_);
 	}
 }
-void Core::OnCleanUp() {
-	TTF_Quit();
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
+
+void Core::OnCleanUp() const {
+	SDL_DestroyRenderer(renderer_);
+	SDL_DestroyWindow(window_);
 	SDL_Quit();
 }
+

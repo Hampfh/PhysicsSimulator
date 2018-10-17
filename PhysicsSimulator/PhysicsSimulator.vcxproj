@@ -70,26 +70,26 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)\bin\intermediates\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediates\$(Platform)\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)dependencies\includes;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)/dependencies/libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)\bin\intermediates\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediates\$(Platform)\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)dependencies\includes;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)/dependencies/libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)\bin\intermediates\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediates\$(Platform)\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)dependencies\includes;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)/dependencies/libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)\bin\intermediates\$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)bin\intermediates\$(Platform)\$(Configuration)\</IntDir>
     <IncludePath>$(SolutionDir)dependencies\includes;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)/dependencies/libs;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
@@ -154,11 +154,13 @@
     <ClCompile Include="src\PhysicsEngine.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Core.cpp" />
+    <ClCompile Include="src\TTF_FontDisplay.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\includes\Vector.h" />
     <ClInclude Include="src\PhysicsEngine.h" />
     <ClInclude Include="src\Core.h" />
+    <ClInclude Include="src\TTF_FontDisplay.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="src\includes\fonts\Roboto\LICENSE.txt" />
