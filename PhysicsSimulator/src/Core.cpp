@@ -2,6 +2,7 @@
 #include <vector>
 
 SDL_Renderer* Core::renderer_;
+PhysicsEngine* Core::pe_;
 
 Core::Core() {
 	window_ = nullptr;
@@ -62,19 +63,27 @@ void Core::OnEvent(SDL_Event* event) {
 		running_ = false;
 		break;
 	case SDL_MOUSEBUTTONDOWN:
+		SDL_GetMouseState(&mouseX_, &mouseY_);
+
+		// If click was performed outside screen then ignore
+		if (mouseX_ < 0 || mouseX_ > screenWidth_ || 
+			mouseY_ < 0 || mouseY_ > screenHeight_) {
+			return;
+		}
+
 		// Left button clicked
 		if (event->button.button == SDL_BUTTON_LEFT) {
-			// Check if hovering over obect
-			SDL_GetMouseState(&mouseX_, &mouseY_);
+			
 			PhysicsObject* object = pe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_));
+
 			// If user selects the same object twice then unselect
 			if (object == selectedObject_ && object != nullptr && selectedObjectAction_ == 1) {
 				// Unselect the selectedObject
 				selectedObject_ = nullptr;
 				selectedObjectAction_ = 0;
-				pause_ = false;
 			}
-			else if (object == nullptr) {
+			// Apply force if user didn't click on any object and action is 1
+			else if (object == nullptr && selectedObjectAction_ == 1) {
 				// If selectedObject has selection then mark position
 				if (selectedObject_ != nullptr) {
 					// Add force in the direction
@@ -82,23 +91,21 @@ void Core::OnEvent(SDL_Event* event) {
 					Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 					Vector2 dir = pos2 - *pos1;
 
-					dir.setMag(0.002f);
+					dir.setMag(0.001f);
 
 					selectedObject_->ApplyForce(dir);
 				}
 				// Unselect the selectedObject
 				selectedObject_ = nullptr;
 				selectedObjectAction_ = 0;
-				pause_ = false;
 			}
-			else {
+			else if (object != nullptr) {
 				selectedObject_ = object;
 				selectedObjectAction_ = 1;
 			}
 		}
 			// Right button clicked
 		else if (event->button.button == SDL_BUTTON_RIGHT) {
-			SDL_GetMouseState(&mouseX_, &mouseY_);
 
 			PhysicsObject* object = pe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_));
 			if (object == selectedObject_ && object != nullptr && selectedObjectAction_ == 2) {
@@ -107,6 +114,7 @@ void Core::OnEvent(SDL_Event* event) {
 				selectedObjectAction_ = 0;
 				pause_ = false;
 			}
+			// Summon a sphere if user didn't click an object
 			else if (object == nullptr) {
 				// Summon sphere
 				SDL_Point position;
@@ -130,8 +138,7 @@ void Core::OnEvent(SDL_Event* event) {
 	case SDL_TEXTINPUT:
 	case SDL_TEXTEDITING:
 		if (selectedObjectAction_ == 2) {
-			pause_ = false;
-			//std::cout << event->edit.text << std::endl;
+			
 		}
 		break;
 	case SDL_KEYDOWN:
@@ -140,12 +147,18 @@ void Core::OnEvent(SDL_Event* event) {
 			if (pause_) pause_ = false;
 			else pause_ = true;
 			break;
-			// Unselect all objects if escape or backspace is clicked
+		// Unselect all objects if escape or backspace is clicked
 		case SDLK_ESCAPE:
 		case SDLK_BACKSPACE:
 			selectedObject_ = nullptr;
 			selectedObjectAction_ = 0;
 			pause_ = false;
+			break;
+		case SDLK_h:
+			// halt the object, remove all velocity
+			if (selectedObject_ != nullptr) {
+				selectedObject_->SetVelocity(Vector2(0,0));	
+			}
 			break;
 		default:
 			break;
@@ -159,6 +172,10 @@ void Core::OnEvent(SDL_Event* event) {
 void Core::OnLoop() {
 	if (!pause_) {
 		pe_->UpdatePhysics();
+		// Action two can't exist in non paused
+		if (selectedObjectAction_ == 2) selectedObjectAction_ = 0;
+	} else {
+		DrawPauseLogo(screenWidth_ - 35, 10, {0,0,0,255});
 	}
 	SDL_GetMouseState(&mouseX_, &mouseY_);
 	Vector2 mousePos(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
@@ -179,6 +196,7 @@ void Core::OnLoop() {
 		TextPackage package = selectedObject_->PrepareObjectSettings();
 		DrawSettingPackage(&package);
 	}
+	SDL_Delay(1);
 }
 
 void Core::OnRender() const {
@@ -193,6 +211,21 @@ void Core::OnCleanUp() const {
 	SDL_DestroyRenderer(renderer_);
 	SDL_DestroyWindow(window_);
 	SDL_Quit();
+}
+
+void Core::DrawPauseLogo(const int x, const int y, SDL_Color color) {
+	SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, color.a);
+		SDL_Rect rect;
+		rect.x = x; 
+		rect.y = y;
+		rect.w = 10;
+		rect.h = 30;
+		SDL_RenderFillRect(renderer_, &rect);
+		rect.x = x - 15;
+		rect.y = y;
+		rect.w = 10;
+		rect.h = 30;
+		SDL_RenderFillRect(renderer_, &rect);
 }
 
 void Core::DrawSettingPackage(TextPackage* package) const {
@@ -212,25 +245,70 @@ void Core::DrawSettingPackage(TextPackage* package) const {
 }
 
 void Core::CheckConsole() {
-	char input[10];
-	std::cin >> input;
-	ConsoleInterpretation(input);
+	std::string input;
+	std::getline(std::cin, input);
+	ConsoleInterpretation(&input);
 	CheckConsole();
 }
 
-void Core::ConsoleInterpretation(std::string command) {
-	std::vector<std::string> internal;
-	std::stringstream ss(command);
+void Core::ConsoleInterpretation(std::string* command) {
+	const int commandMaxArguments = 4;
+	std::string input[commandMaxArguments];
+	std::stringstream ss(*command);
 	std::string tok;
 
+	int i = 0;
 	while(std::getline(ss, tok, ' ')) {
-		internal.push_back(tok);
+		if (i > commandMaxArguments) {
+			break;
+		}
+		input[i] = tok;
+		i++;
 	}
 
-	for(int i = 0; i < internal.size(); ++i) {
-		std::cout << internal[i] << std::endl;
-	}
+	// Commands
+    if (input[0] == "target") {
+		if (IsNumber(input[1])) {
+			const int id = std::stoi(input[1]);
+			auto object = pe_->GetObjectWithId(id);
 
-	return;
+			if (object == nullptr) {
+				std::cout << "ERROR: No object with ID:" << id << " found" << std::endl;
+				return;
+			}
+
+			if (input[2] == "setMass") {
+				if (IsNumber(input[3])) {
+					const float value = std::stof(input[3]);
+
+					// Perform request
+					object->SetMass(value);
+					std::cout << "Mass successfully changed to " << value << std::endl;
+				} else {
+					std::cout << "ERROR: No number was entered" << std::endl;
+				}
+			} else if (input[2] == "setRadius") {
+				if (IsNumber(input[3])) {
+					const int value = std::stoi(input[3]);
+
+					// Perform request
+					object->SetRadius(value);
+					std::cout << "Radius successfully changed to " << value << std::endl;
+				} else {
+					std::cout << "ERROR: No number was entered" << std::endl;
+				}
+			} else if (input[2].empty()) {
+				std::cout << "System: Found object <" << object << ">" << std::endl;
+			} else {
+				std::cout << "ERROR: No such command" << std::endl;
+			}
+		} else {
+			std::cout << "ERROR: Input was not number" << std::endl;
+		}
+    }
 }
 
+bool Core::IsNumber(const std::string& s) {
+	// Checks the first character and the last character
+	return ( !(s.empty()) && isdigit(s[0]) );
+}

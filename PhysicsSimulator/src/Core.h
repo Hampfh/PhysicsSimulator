@@ -3,6 +3,7 @@
 #include "PhysicsEngine.h"
 #include "TTF_FontDisplay.h"
 #include <iostream>
+#include <locale> // std::isdigit
 // For console reading
 #include <vector>
 #include <thread>
@@ -28,7 +29,7 @@ class Core {
 	PhysicsObject* selectedObject_ = nullptr;
 	int selectedObjectAction_ = 0;
 
-	PhysicsEngine* pe_ = nullptr;
+	static PhysicsEngine* pe_;
 	FontDisplay* textDisplay_ = nullptr;
 public:
 	Core();
@@ -39,9 +40,11 @@ public:
 	void OnRender() const;
 	void OnCleanUp() const;
 
+	void DrawPauseLogo(int x, int y, SDL_Color color);
 	void DrawSettingPackage(TextPackage* package) const;
 	void CheckConsole();
-	void ConsoleInterpretation(std::string command);
+	void ConsoleInterpretation(std::string* command);
+	bool IsNumber(const std::string& s);
 };
 
 

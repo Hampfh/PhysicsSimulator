@@ -49,7 +49,12 @@ public:
 	float GetY() const { return location_.y(); };
 	int GetId() const { return objectId_; };
 
+	void SetLocation(Vector2 location);
+	void SetVelocity(Vector2 velocity);
+	void SetAcceleration(Vector2 acceleration);
 	void SetColor(int r = -1, int g = -1, int b = -1, int a = -1);
+	void SetRadius(int radius);
+	void SetMass(float mass);
 	void ResetColor();
 };
 
@@ -70,6 +75,7 @@ public:
 	float DistanceDifference(PhysicsObject* point, PhysicsObject* point_two);
 	float DistanceDifference(Vector2* point, Vector2* point_two);
 	PhysicsObject* GetObjectOnPosition(Vector2* location);
+	PhysicsObject* GetObjectWithId(int id) const;
 	PhysicsObject* SummonObject(SDL_Point* position, int radius, int mass, SDL_Color* color);
 	void UpdatePhysics();
 	void UpdateGraphics();

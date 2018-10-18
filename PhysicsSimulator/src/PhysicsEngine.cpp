@@ -100,11 +100,29 @@ void PhysicsObject::Update() {
 	acceleration_.setMag(0);
 }
 
-void PhysicsObject::SetColor(int r, int g, int b, int a) {
+void PhysicsObject::SetLocation(const Vector2 location) {
+	location_ = location;
+}
+void PhysicsObject::SetVelocity(const Vector2 velocity) {
+	velocity_ = velocity;
+}
+void PhysicsObject::SetAcceleration(const Vector2 acceleration) {
+	acceleration_ = acceleration;
+}
+
+void PhysicsObject::SetColor(const int r, const int g, const int b, const int a) {
 	if (r >= 0) this->color_.r = r;
 	if (g >= 0) this->color_.g = g;
 	if (b >= 0) this->color_.b = b;
 	if (a >= 0) this->color_.a = a;
+}
+
+void PhysicsObject::SetRadius(const int radius) {
+	radius_ = radius;
+}
+
+void PhysicsObject::SetMass(const float mass) {
+	mass_ = mass;
 }
 
 void PhysicsObject::ResetColor() {
@@ -115,7 +133,8 @@ void PhysicsObject::ResetColor() {
 
 PhysicsEngine::PhysicsEngine(const int simulation_width, const int simulation_height) 
 	: simulationWidth_(simulation_width), simulationHeight_(simulation_height) {
-
+	firstObject_ = nullptr;
+	lastObject_ = nullptr;
 }
 
 
@@ -152,9 +171,8 @@ void PhysicsEngine::UpdatePhysics() {
 			F = G --------
 				    r^2
 			*/
-			const float force_strength = static_cast<float>(6.672f * pow(10, -11)) * ((current->GetMass() * current_matcher->GetMass()) / pow(DistanceDifference(current, current_matcher), 2));
-
-			dir.setMag(force_strength * 100000);
+			const float forceStrength = static_cast<float>(6.672f * pow(10, -11)) * ((current->GetMass() * current_matcher->GetMass()) / pow(DistanceDifference(current, current_matcher), 2));
+			dir.setMag(forceStrength * 100000 / current->GetMass());
 
 			current->ApplyForce(dir);
 
@@ -163,8 +181,6 @@ void PhysicsEngine::UpdatePhysics() {
 		current->Update();
 		current = current->next;
 	}
-
-	SDL_Delay(1);
 }
 
 void PhysicsEngine::UpdateGraphics() {
@@ -219,14 +235,40 @@ PhysicsObject* PhysicsEngine::SummonObject(SDL_Point* position, const int radius
 }
 
 PhysicsObject* PhysicsEngine::GetObjectOnPosition(Vector2* location) {
+
+	if (this == nullptr || firstObject_ == nullptr) {
+		return nullptr;
+	}
+
 	// Temporary variables
 	PhysicsObject* current = firstObject_;
 
 	// Go through all objects
 	while (current != nullptr) {
 		
-		const int distance_between = static_cast<int>(DistanceDifference(current->GetLocation(), location)); 
-		if (distance_between <= current->GetRadius()) {
+		const int distanceBetween = static_cast<int>(DistanceDifference(current->GetLocation(), location)); 
+		if (distanceBetween <= current->GetRadius()) {
+			return current;
+		}
+
+		current = current->next;
+	}
+	return nullptr;
+}
+
+PhysicsObject* PhysicsEngine::GetObjectWithId(const int id) const {
+
+	if (firstObject_ == nullptr) {
+		return nullptr;
+	}
+
+	// Temporary variables
+	PhysicsObject* current = firstObject_;
+
+	// Go through all objects
+	while (current != nullptr) {
+		
+		if (current->GetId() == id) {
 			return current;
 		}
 
