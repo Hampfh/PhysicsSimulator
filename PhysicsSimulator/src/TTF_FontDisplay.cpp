@@ -56,6 +56,7 @@ int FontDisplay::CreateText(const SDL_Rect box, std::string* message, std::strin
 }
 
 void FontDisplay::DisplayText() const {
+	// Copy out text to screen
 	SDL_RenderCopy(Core::renderer_, texture_, nullptr, textRect_);
 	// Delete the texture after display
 	SDL_DestroyTexture(texture_);

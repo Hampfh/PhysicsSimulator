@@ -155,12 +155,14 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Core.cpp" />
     <ClCompile Include="src\TTF_FontDisplay.cpp" />
+    <ClCompile Include="src\Universe.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\includes\Vector.h" />
     <ClInclude Include="src\PhysicsEngine.h" />
     <ClInclude Include="src\Core.h" />
     <ClInclude Include="src\TTF_FontDisplay.h" />
+    <ClInclude Include="src\Universe.h" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="src\includes\fonts\Roboto\LICENSE.txt" />

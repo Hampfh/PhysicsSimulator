@@ -1,15 +1,19 @@
 #pragma once
 #include <SDL2/SDL.h>
 #include "PhysicsEngine.h"
+#include "Universe.h"
 #include "TTF_FontDisplay.h"
 #include <iostream>
 #include <locale> // std::isdigit
+#include <vector>
 // For console reading
 #include <vector>
 #include <thread>
 #include <sstream>  
 
 struct TextPackage;
+
+class Universe;
 
 class Core {
 	friend class PhysicsEngine;
@@ -26,10 +30,12 @@ class Core {
 	SDL_Window* window_;
 	static SDL_Renderer* renderer_;
 
+	PhysicsObject* hoverObject_ = nullptr;
 	PhysicsObject* selectedObject_ = nullptr;
 	int selectedObjectAction_ = 0;
 
 	static PhysicsEngine* pe_;
+	Universe* universe_ = nullptr;
 	FontDisplay* textDisplay_ = nullptr;
 public:
 	Core();
@@ -37,14 +43,15 @@ public:
 	bool OnInit();
 	void OnEvent(SDL_Event* event);
 	void OnLoop();
-	void OnRender() const;
+	static void OnRender();
 	void OnCleanUp() const;
 
-	void DrawPauseLogo(int x, int y, SDL_Color color);
+	static void DrawPauseLogo(int x, int y, SDL_Color color);
 	void DrawSettingPackage(TextPackage* package) const;
-	void CheckConsole();
-	void ConsoleInterpretation(std::string* command);
-	bool IsNumber(const std::string& s);
+	void CheckConsole() const;
+	void ConsoleInterpretation(std::string* command) const;
+	static bool IsNumber(const std::string& s);
+	void UpdateGraphics() const;
 };
 
 
