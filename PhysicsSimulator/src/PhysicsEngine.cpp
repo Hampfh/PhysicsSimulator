@@ -64,7 +64,7 @@ TextPackage PhysicsObject::PrepareObjectSettings() {
 	setting.settingTextBox.y = settingsBox_.y + setting_num * setting_font_size;
 	setting.settingTextBox.w = settingsBox_.w;
 	setting.settingTextBox.h = setting_font_size + setting_offset;
-	setting.text = "Mass: " + std::to_string(mass_);
+	setting.text = "Mass: " + std::to_string(mass_) + " kg";
 	setting.fontPath = "src/includes/fonts/Roboto/Roboto-Regular.ttf";
 	setting.fontSize = setting_font_size;
 
@@ -77,7 +77,7 @@ TextPackage PhysicsObject::PrepareObjectSettings() {
 	setting.settingTextBox.y = settingsBox_.y + setting_num * setting_font_size;
 	setting.settingTextBox.w = settingsBox_.w;
 	setting.settingTextBox.h = setting_font_size + setting_offset;
-	setting.text = "Radius: " + std::to_string(radius_);
+	setting.text = "Radius: " + std::to_string(radius_) + " m";
 	setting.fontPath = "src/includes/fonts/Roboto/Roboto-Regular.ttf";
 	setting.fontSize = setting_font_size;
 	

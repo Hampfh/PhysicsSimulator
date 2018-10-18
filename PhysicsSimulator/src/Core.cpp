@@ -58,12 +58,14 @@ bool Core::OnInit() {
 }
 
 void Core::OnEvent(SDL_Event* event) {
+	SDL_GetMouseState(&mouseX_, &mouseY_);
+	PhysicsObject* mouseTarget = pe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_));
+
 	switch (event->type) {
 	case SDL_QUIT:
 		running_ = false;
 		break;
 	case SDL_MOUSEBUTTONDOWN:
-		SDL_GetMouseState(&mouseX_, &mouseY_);
 
 		// If click was performed outside screen then ignore
 		if (mouseX_ < 0 || mouseX_ > screenWidth_ || 
@@ -73,34 +75,15 @@ void Core::OnEvent(SDL_Event* event) {
 
 		// Left button clicked
 		if (event->button.button == SDL_BUTTON_LEFT) {
-			
-			PhysicsObject* object = pe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_));
 
 			// If user selects the same object twice then unselect
-			if (object == selectedObject_ && object != nullptr && selectedObjectAction_ == 1) {
+			if (mouseTarget == selectedObject_ && mouseTarget != nullptr && selectedObjectAction_ == 1) {
 				// Unselect the selectedObject
 				selectedObject_ = nullptr;
 				selectedObjectAction_ = 0;
 			}
-			// Apply force if user didn't click on any object and action is 1
-			else if (object == nullptr && selectedObjectAction_ == 1) {
-				// If selectedObject has selection then mark position
-				if (selectedObject_ != nullptr) {
-					// Add force in the direction
-					Vector2* pos1 = selectedObject_->GetLocation();
-					Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
-					Vector2 dir = pos2 - *pos1;
-
-					dir.setMag(0.001f);
-
-					selectedObject_->ApplyForce(dir);
-				}
-				// Unselect the selectedObject
-				selectedObject_ = nullptr;
-				selectedObjectAction_ = 0;
-			}
-			else if (object != nullptr) {
-				selectedObject_ = object;
+			else if (mouseTarget != nullptr && selectedObjectAction_ != 3) {
+				selectedObject_ = mouseTarget;
 				selectedObjectAction_ = 1;
 			}
 		}
@@ -133,6 +116,32 @@ void Core::OnEvent(SDL_Event* event) {
 				selectedObjectAction_ = 2;
 				pause_ = true;
 			}
+		}
+		break;
+	case SDL_MOUSEBUTTONUP:
+		if (mouseTarget == nullptr && selectedObjectAction_ == 1) {
+			// If selectedObject has selection then mark position
+			if (selectedObject_ != nullptr) {
+				// Add force in the direction
+				Vector2* pos1 = selectedObject_->GetLocation();
+				Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
+				Vector2 dir = pos2 - *pos1;
+
+				dir.setMag(0.001f);
+
+				selectedObject_->ApplyForce(dir);
+			}
+			// Unselect the selectedObject
+			selectedObject_ = nullptr;
+			selectedObjectAction_ = 0;
+
+		} else if (selectedObjectAction_ == 1) {
+			// Planet is left clicked
+			selectedObjectAction_ = 3;
+		} else if (selectedObjectAction_ == 3) {
+			// Selected object is clicked
+			selectedObject_ = nullptr;
+			selectedObjectAction_ = 0; // Deselect
 		}
 		break;
 	case SDL_TEXTINPUT:
@@ -185,7 +194,7 @@ void Core::OnLoop() {
 	if (object != nullptr) {
 		object->SetColor(100, 20, 20);
 	}
-	
+
 	pe_->UpdateGraphics();
 
 	// Draw line between selected object and mouse
@@ -195,7 +204,10 @@ void Core::OnLoop() {
 	else if (selectedObject_ != nullptr && selectedObjectAction_ == 2) {
 		TextPackage package = selectedObject_->PrepareObjectSettings();
 		DrawSettingPackage(&package);
+	} else if (selectedObject_ != nullptr && selectedObjectAction_ == 3) {
+		selectedObject_->SetColor(100, 20, 20);
 	}
+
 	SDL_Delay(1);
 }
 
@@ -213,7 +225,7 @@ void Core::OnCleanUp() const {
 	SDL_Quit();
 }
 
-void Core::DrawPauseLogo(const int x, const int y, SDL_Color color) {
+void Core::DrawPauseLogo(const int x, const int y, const SDL_Color color) {
 	SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, color.a);
 		SDL_Rect rect;
 		rect.x = x; 
