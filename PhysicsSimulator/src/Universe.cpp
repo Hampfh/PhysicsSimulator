@@ -8,10 +8,21 @@ PhysicsObject::PhysicsObject(const int id, SDL_Point* position, const int radius
 	defaultColor_ = color_;
 }
 
-void PhysicsObject::ApplyForce(Vector2 force) {
+void PhysicsObject::ApplyForce(const Vector2 force) {
+	// Add vector to linked queue
+	if (firstForce_ == nullptr) {
+		firstForce_ = new ForceItem;
+		lastForce_ = firstForce_;
+		firstForce_->force = force;
+	} else {
+		lastForce_->next = new ForceItem;
+		lastForce_ = lastForce_->next;
+		lastForce_->force = force;
+	}
+
+	/* Old code 
 	acceleration_ = acceleration_ + force;
-	//force.DivideWith(mass_);
-	//acceleration_ = force;
+	*/
 }
 
 void PhysicsObject::DrawCircle() const {
@@ -92,6 +103,13 @@ TextPackage PhysicsObject::PrepareObjectSettings() {
 	return package;
 }
 
+// Updates the single object
+void PhysicsObject::Update() {
+	velocity_ = velocity_ + acceleration_;
+	location_ = location_ + velocity_;
+	acceleration_.SetMag(0);
+}
+
 void PhysicsObject::SetLocation(const Vector2 location) {
 	location_ = location;
 }
@@ -132,10 +150,10 @@ Universe::~Universe() {
 	}
 }
 
-PhysicsObject* Universe::GetFirst() const {
+PhysicsObject* Universe::GetFirst() {
 	return firstObject_;
 }
-PhysicsObject* Universe::GetLast() const {
+PhysicsObject* Universe::GetLast() {
 	return lastObject_;
 }
 PhysicsObject* Universe::GetObjectOnPosition(Vector2* location) const {

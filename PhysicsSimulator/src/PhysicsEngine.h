@@ -9,5 +9,5 @@ static Vector2 SDLPointToVec2(SDL_Point* point);
 
 class PhysicsEngine {	
 public:
-	void UpdatePhysics(PhysicsObject* first) const;
+	void UpdatePhysics(PhysicsObject* first, float timeInterval) const;
 };

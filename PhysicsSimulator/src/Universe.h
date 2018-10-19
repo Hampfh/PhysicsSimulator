@@ -18,11 +18,19 @@ struct TextPackage {
 	SDL_Rect* settingsBox = nullptr;
 };
 
+struct ForceItem {
+	Vector2 force;
+	ForceItem* next = nullptr;
+};
+
 class PhysicsObject {
 	const int objectId_;
 
 	int radius_;
 	float mass_;
+
+	ForceItem* firstForce_ = nullptr;
+	ForceItem* lastForce_ = nullptr;
 
 	Vector2 location_;
 	Vector2 velocity_;
@@ -41,6 +49,8 @@ public:
 	void DrawCircle() const;
 	TextPackage PrepareObjectSettings();
 
+	ForceItem* GetFirstForce() { return firstForce_; };
+	ForceItem* GetLastForce() { return lastForce_; };
 	Vector2* GetLocation() { return &location_; };
 	Vector2* GetVelocity() { return &velocity_; };
 	Vector2* GetAcceleration() { return &acceleration_; };

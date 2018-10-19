@@ -58,7 +58,7 @@ bool Vector2::operator== (Vector2 secondVec) {
 	return false;
 }
 
-void Vector2::Limit(int limit) {
+void Vector2::limit(int limit) {
 	if (this->_x < 0.0f && abs(this->_x) > limit) {
 		this->_x = limit * -1;
 	}
@@ -74,15 +74,18 @@ void Vector2::Limit(int limit) {
 	}
 }
 
-void Vector2::SetMag(float magnitude) {
-	this->_x = this->_x * magnitude;
-	this->_y = this->_y * magnitude;
+Vector2 Vector2::SetMag(float magnitude) {
+	return Vector2{
+		this->_x = this->_x * magnitude,
+		this->_y = this->_y * magnitude
+	};
 }
 
-void Vector2::DivideWith(float division) {
-	this->_x / division;
-	this->_y / division;
+Vector2 Vector2::Divide(const float divider) {
+	return Vector2{this->_x = this->_x / divider,
+		this->_y = this->_y / divider};
 }
+
 
 Vector3::Vector3() {
 	_x = NULL;
