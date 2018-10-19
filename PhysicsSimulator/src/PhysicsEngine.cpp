@@ -21,7 +21,7 @@ Vector2 SDLPointToVec2(SDL_Point* point) {
 
 ////////////////////////////////////////////////// PhysicsEngine //////////////////////////////////////////////////////////////
 
-void PhysicsEngine::UpdatePhysics(PhysicsObject* first) const {
+void PhysicsEngine::UpdatePhysics(PhysicsObject* first, float timeInterval) const {
 	// Temporary variables
 	PhysicsObject* current = first;
 	PhysicsObject* currentMatcher = first;
@@ -45,7 +45,7 @@ void PhysicsEngine::UpdatePhysics(PhysicsObject* first) const {
 				    r^2
 			*/
 			const float forceStrength = static_cast<float>(6.672f * pow(10, -11)) * ((current->GetMass() * currentMatcher->GetMass()) / pow(DistanceDifference(current, currentMatcher), 2));
-			dir.setMag(forceStrength * 100000 / current->GetMass());
+			dir = dir.SetMag(forceStrength * 100000 / current->GetMass());
 
 			current->ApplyForce(dir);
 
@@ -58,6 +58,49 @@ void PhysicsEngine::UpdatePhysics(PhysicsObject* first) const {
 
 			currentMatcher = currentMatcher->next;
 		}
+		// calc F
+		const auto firstForce = current->GetFirstForce();
+		auto prevForce = firstForce;
+		auto currentForce = firstForce;
+		int listCount = 0;
+		Vector2 totalForce;
+
+		while (currentForce != nullptr) {
+			totalForce = totalForce + currentForce->force;
+			listCount++;
+			currentForce = currentForce->next;
+			delete prevForce;
+			prevForce = currentForce;
+		}
+		totalForce = totalForce.Divide(listCount);
+
+		std::cout << totalForce.x() << " : " << totalForce.y() << std::endl;
+
+		// Update acceleration
+		// a = F / m
+		Vector2 acceleration = totalForce.Divide(current->GetMass());
+
+		// Update velocity
+		// v = v0 + at
+		Vector2 velocity = *current->GetVelocity() + acceleration.SetMag(timeInterval);
+
+		// Update location
+		// s = v * t
+		Vector2 location = velocity.SetMag(timeInterval);
+
+		current->SetAcceleration(acceleration);
+		current->SetVelocity(velocity);
+		current->SetLocation(location);
+
+		//current->SetAcceleration(current->GetForce()->Divide(current->GetMass()));
+
+		//current->SetVelocity(*current->GetVelocity() + current->GetAcceleration()->SetMag(timeInterval));
+		// Old code
+		//current->SetVelocity(*current->GetVelocity() + *current->GetAcceleration());
+
+		//current->SetLocation(*current->GetLocation() + *current->GetVelocity());
+		// Set location --
+
 		current->Update();
 		current = current->next;
 	}

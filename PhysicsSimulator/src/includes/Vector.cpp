@@ -74,10 +74,18 @@ void Vector2::limit(int limit) {
 	}
 }
 
-void Vector2::setMag(float magnitude) {
-	this->_x = this->_x * magnitude;
-	this->_y = this->_y * magnitude;
+Vector2 Vector2::SetMag(float magnitude) {
+	return Vector2{
+		this->_x = this->_x * magnitude,
+		this->_y = this->_y * magnitude
+	};
 }
+
+Vector2 Vector2::Divide(const float divider) {
+	return Vector2{this->_x = this->_x / divider,
+		this->_y = this->_y / divider};
+}
+
 
 Vector3::Vector3() {
 	_x = NULL;

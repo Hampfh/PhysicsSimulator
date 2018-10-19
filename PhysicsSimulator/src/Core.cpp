@@ -9,6 +9,7 @@ Core::Core() {
 	pause_ = false;
 	mouseX_ = 0;
 	mouseY_ = 0;
+	timeInterval_ = 0.001;
 }
 
 int Core::OnExecute() {
@@ -118,7 +119,7 @@ void Core::OnEvent(SDL_Event* event) {
 				Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 				Vector2 dir = pos2 - *pos1;
 
-				dir.setMag(0.001f);
+				dir = dir.SetMag(0.001f);
 
 				selectedObject_->ApplyForce(dir);
 			}
@@ -154,7 +155,7 @@ void Core::OnEvent(SDL_Event* event) {
 			break;
 		case SDLK_h:
 			// halt the object, remove all velocity
-			if (hoverObject_ != nullptr) { hoverObject_->GetVelocity()->setMag(0); }
+			if (hoverObject_ != nullptr) { hoverObject_->SetVelocity(hoverObject_->GetVelocity()->SetMag(0)); }
 			break;
 		default:
 			break;
@@ -167,7 +168,7 @@ void Core::OnEvent(SDL_Event* event) {
 
 void Core::OnLoop() {
 	if (!pause_) {
-		pe_->UpdatePhysics(universe_->GetFirst());
+		pe_->UpdatePhysics(universe_->GetFirst(), timeInterval_);
 		// Action two can't exist in non paused
 		if (selectedObjectAction_ == 2) selectedObjectAction_ = 0;
 	}
@@ -178,7 +179,9 @@ void Core::OnLoop() {
 
 	UpdateGraphics();
 
-	SDL_Delay(1);
+	// From seconds to milliseconds
+	SDL_Delay(timeInterval_ * 1000);
+	std::cout << timeInterval_ * 1000 << std::endl;
 }
 
 void Core::OnRender() {

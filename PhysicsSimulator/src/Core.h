@@ -25,6 +25,9 @@ class Core {
 
 	int mouseX_, mouseY_;
 
+	//Time interval in seconds
+	float timeInterval_;
+
 	bool running_;
 	bool pause_;
 	SDL_Window* window_;
