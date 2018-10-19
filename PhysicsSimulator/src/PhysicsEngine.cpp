@@ -44,8 +44,8 @@ void PhysicsEngine::UpdatePhysics(PhysicsObject* first) const {
 			F = G --------
 				    r^2
 			*/
-			const float forceStrength = static_cast<float>(6.672f * pow(10, -11)) * ((current->GetMass() * currentMatcher->GetMass()) / pow(DistanceDifference(current, currentMatcher), 2));
-			dir.setMag(forceStrength * 100000 / current->GetMass());
+			const auto forceStrength = static_cast<float>(6.672f * pow(10, -11)) * ((current->GetMass() * currentMatcher->GetMass()) / pow(DistanceDifference(current, currentMatcher), 2));
+			dir.SetMag(forceStrength * 100000 / current->GetMass());
 
 			current->ApplyForce(dir);
 
@@ -58,7 +58,13 @@ void PhysicsEngine::UpdatePhysics(PhysicsObject* first) const {
 
 			currentMatcher = currentMatcher->next;
 		}
-		current->Update();
+
+		// Calculate forces
+		current->SetVelocity(*current->GetVelocity() + *current->GetAcceleration());
+		current->SetLocation(*current->GetLocation() + *current->GetVelocity());
+		// Reset acceleration
+		current->GetAcceleration()->SetMag(0);
+
 		current = current->next;
 	}
 }

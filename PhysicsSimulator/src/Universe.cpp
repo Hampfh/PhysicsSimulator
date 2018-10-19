@@ -8,8 +8,10 @@ PhysicsObject::PhysicsObject(const int id, SDL_Point* position, const int radius
 	defaultColor_ = color_;
 }
 
-void PhysicsObject::ApplyForce(const Vector2 force) {
+void PhysicsObject::ApplyForce(Vector2 force) {
 	acceleration_ = acceleration_ + force;
+	//force.DivideWith(mass_);
+	//acceleration_ = force;
 }
 
 void PhysicsObject::DrawCircle() const {
@@ -90,13 +92,6 @@ TextPackage PhysicsObject::PrepareObjectSettings() {
 	return package;
 }
 
-// Updates the single object
-void PhysicsObject::Update() {
-	velocity_ = velocity_ + acceleration_;
-	location_ = location_ + velocity_;
-	acceleration_.setMag(0);
-}
-
 void PhysicsObject::SetLocation(const Vector2 location) {
 	location_ = location;
 }
@@ -137,10 +132,10 @@ Universe::~Universe() {
 	}
 }
 
-PhysicsObject* Universe::GetFirst() {
+PhysicsObject* Universe::GetFirst() const {
 	return firstObject_;
 }
-PhysicsObject* Universe::GetLast() {
+PhysicsObject* Universe::GetLast() const {
 	return lastObject_;
 }
 PhysicsObject* Universe::GetObjectOnPosition(Vector2* location) const {

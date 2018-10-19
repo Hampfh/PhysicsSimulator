@@ -40,7 +40,6 @@ public:
 	void ApplyForce(Vector2 force);
 	void DrawCircle() const;
 	TextPackage PrepareObjectSettings();
-	void Update();
 
 	Vector2* GetLocation() { return &location_; };
 	Vector2* GetVelocity() { return &velocity_; };
@@ -69,8 +68,8 @@ class Universe {
 public:
 	~Universe();
 
-	PhysicsObject* GetFirst();
-	PhysicsObject* GetLast();
+	PhysicsObject* GetFirst() const;
+	PhysicsObject* GetLast() const;
 	PhysicsObject* GetObjectOnPosition(Vector2* location) const;
 	PhysicsObject* GetObjectWithId(int id) const;
 	PhysicsObject* SummonObject(SDL_Point* position, int radius, int mass, SDL_Color* color);

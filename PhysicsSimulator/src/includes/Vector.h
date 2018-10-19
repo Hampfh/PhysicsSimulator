@@ -26,8 +26,9 @@ public:
 	bool operator< (const Vector2 secondVec);
 	bool operator> (const Vector2 secondVec);
 	bool operator== (Vector2 secondVec);
-	void limit(int limit);
-	void setMag(float magnitude);
+	void Limit(int limit);
+	void SetMag(float magnitude);
+	void DivideWith(float division);
 };
 
 class Vector3 {
