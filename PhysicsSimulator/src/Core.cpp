@@ -119,7 +119,7 @@ void Core::OnEvent(SDL_Event* event) {
 				Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 				Vector2 dir = pos2 - *pos1;
 
-				dir = dir.SetMag(0.001f);
+				dir.setMag(0.001f);
 
 				selectedObject_->ApplyForce(dir);
 			}
@@ -155,7 +155,7 @@ void Core::OnEvent(SDL_Event* event) {
 			break;
 		case SDLK_h:
 			// halt the object, remove all velocity
-			if (hoverObject_ != nullptr) { hoverObject_->SetVelocity(hoverObject_->GetVelocity()->SetMag(0)); }
+			if (hoverObject_ != nullptr) { hoverObject_->GetVelocity()->setMag(0); }
 			break;
 		default:
 			break;
