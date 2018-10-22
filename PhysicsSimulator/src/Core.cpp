@@ -9,7 +9,10 @@ Core::Core() {
 	pause_ = false;
 	mouseX_ = 0;
 	mouseY_ = 0;
-	timeInterval_ = 0.001;
+	originX_ = 0;
+	originY_ = 0;
+	updateFreq_ = 0;
+	fps_ = 60;
 }
 
 int Core::OnExecute() {
@@ -41,31 +44,31 @@ bool Core::OnInit() {
 
 	pe_ = new PhysicsEngine;
 
-	universe_ = new Universe;
+	universe_ = new Universe(&metersPerPixel_, &originX_, &originY_);
 
 	textDisplay_ = new FontDisplay;
 
 	// Create console thread
-	std::thread console_input(&Core::CheckConsole, Core());
-	console_input.detach();
+	std::thread consoleInput(&Core::CheckConsole, Core(), universe_);
+	consoleInput.detach();
 
 	return true;
 }
 
 void Core::OnEvent(SDL_Event* event) {
 	SDL_GetMouseState(&mouseX_, &mouseY_);
+
 	hoverObject_ = universe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_));
+
+	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
+	SDL_RenderDrawLine(renderer_, mouseX_ - 10, mouseY_, mouseX_ + 10, mouseY_);
+	SDL_RenderDrawLine(renderer_, mouseX_, mouseY_ + 10, mouseX_, mouseY_ - 10);
 
 	switch (event->type) {
 	case SDL_QUIT:
 		running_ = false;
 		break;
 	case SDL_MOUSEBUTTONDOWN:
-
-		// If click was performed outside screen then ignore
-		if (mouseX_ < 0 || mouseX_ > screenWidth_ ||
-			mouseY_ < 0 || mouseY_ > screenHeight_) { return; }
-
 		// Left button clicked
 		if (event->button.button == SDL_BUTTON_LEFT) {
 			// If user selects the same object twice then unselect
@@ -80,7 +83,7 @@ void Core::OnEvent(SDL_Event* event) {
 				selectedObjectAction_ = 1;
 			}
 		}
-			// Right button clicked
+		// Right button clicked
 		else if (event->button.button == SDL_BUTTON_RIGHT) {
 			PhysicsObject* object = universe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_));
 			if (object == selectedObject_ && object != nullptr && selectedObjectAction_ == 2) {
@@ -89,18 +92,30 @@ void Core::OnEvent(SDL_Event* event) {
 				selectedObjectAction_ = 0;
 				pause_ = false;
 			}
-				// Summon a sphere if user didn't click an object
+			// Summon a sphere if user didn't click an object
 			else if (object == nullptr) {
+
+				// Mass of earth (kg)
+				//const double earth = 5.972 * pow(10, 24);
+				//const double earthRadius = 6371*1000;
+
+				const double earth = 8829;
+				const double earthRadius = 100;
+
 				// Summon sphere
-				SDL_Point position;
-				position.x = mouseX_;
-				position.y = mouseY_;
+				Vector2 position(mouseX_, mouseY_);
+
+				position = AdjustZoomOrigin(position, originX_, originY_, metersPerPixel_);
+				SDL_Point point_position;
+				point_position.x = position.x();
+				point_position.y = position.y();
+
 				SDL_Color color;
 				color.r = 20;
 				color.g = 20;
 				color.b = 50;
 				color.a = 255;
-				universe_->SummonObject(&position, 50, 100, &color);
+				universe_->SummonObject(&point_position, earthRadius, earth, &color);
 			}
 			else {
 				// Assign object to setting view
@@ -119,7 +134,7 @@ void Core::OnEvent(SDL_Event* event) {
 				Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 				Vector2 dir = pos2 - *pos1;
 
-				dir.setMag(0.001f);
+				dir.SetMag(0.01f / timeInterval_);
 
 				selectedObject_->ApplyForce(dir);
 			}
@@ -135,9 +150,15 @@ void Core::OnEvent(SDL_Event* event) {
 	case SDL_MOUSEWHEEL:
 		if (event->wheel.y < 0) {
 			// Scroll against
+			originX_ = mouseX_;
+			originY_ = mouseY_;
+			metersPerPixel_ *= 1.1f;
 			
-		} else if (event->wheel.y > 0 ){
+		} else if (event->wheel.y > 0 ) {
 			// Scroll away
+			originX_ = mouseX_;
+			originY_ = mouseY_;
+			metersPerPixel_ /= 1.1f;
 		}
 		break;
 	case SDL_KEYDOWN:
@@ -155,7 +176,13 @@ void Core::OnEvent(SDL_Event* event) {
 			break;
 		case SDLK_h:
 			// halt the object, remove all velocity
-			if (hoverObject_ != nullptr) { hoverObject_->GetVelocity()->setMag(0); }
+			if (hoverObject_ != nullptr) { hoverObject_->GetVelocity()->SetMag(0); }
+			break;
+		case SDLK_UP:
+			originY_ += 100;
+			break;
+		case SDLK_DOWN:
+			originY_ += 100;
 			break;
 		default:
 			break;
@@ -177,11 +204,12 @@ void Core::OnLoop() {
 		DrawPauseLogo(screenWidth_ - 35, 10, {0, 0, 0, 255});
 	}
 
+	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
+	SDL_RenderDrawPoint(renderer_, screenWidth_ / 2, screenHeight_ / 2);
+
 	UpdateGraphics();
 
-	// From seconds to milliseconds
-	SDL_Delay(timeInterval_ * 1000);
-	std::cout << timeInterval_ * 1000 << std::endl;
+	StabilizeFPS();
 }
 
 void Core::OnRender() {
@@ -200,48 +228,17 @@ void Core::OnCleanUp() const {
 	delete pe_;
 	delete universe_;
 	delete textDisplay_;
-	std::cout << "CLEAN UP" << std::endl;
 }
 
-void Core::DrawPauseLogo(const int x, const int y, const SDL_Color color) {
-	SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, color.a);
-	SDL_Rect rect;
-	rect.x = x;
-	rect.y = y;
-	rect.w = 10;
-	rect.h = 30;
-	SDL_RenderFillRect(renderer_, &rect);
-	rect.x = x - 15;
-	rect.y = y;
-	rect.w = 10;
-	rect.h = 30;
-	SDL_RenderFillRect(renderer_, &rect);
-}
-
-void Core::DrawSettingPackage(TextPackage* package) const {
-	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, SDL_ALPHA_OPAQUE);
-	SDL_RenderFillRect(renderer_, package->settingsBox);
-
-	for (int i = 0; i < package->package_size; i++) {
-		auto current_setting = package->settings[i];
-		textDisplay_->CreateText(
-			current_setting.settingTextBox,
-			&current_setting.text,
-			&current_setting.fontPath,
-			current_setting.fontSize
-		);
-		textDisplay_->DisplayText();
+void Core::CheckConsole(Universe* universe) const {
+	while (true) {
+		std::string input;
+		std::getline(std::cin, input);
+		ConsoleInterpretation(&input, universe);	
 	}
 }
 
-void Core::CheckConsole() const {
-	std::string input;
-	std::getline(std::cin, input);
-	ConsoleInterpretation(&input);
-	CheckConsole();
-}
-
-void Core::ConsoleInterpretation(std::string* command) const {
+void Core::ConsoleInterpretation(std::string* command, Universe* universe) const {
 	const int commandMaxArguments = 4;
 	std::string input[commandMaxArguments];
 	std::stringstream ss(*command);
@@ -258,7 +255,7 @@ void Core::ConsoleInterpretation(std::string* command) const {
 	if (input[0] == "/target") {
 		if (IsNumber(input[1])) {
 			const int id = std::stoi(input[1]);
-			auto object = universe_->GetObjectWithId(id);
+			auto object = universe->GetObjectWithId(id);
 
 			if (object == nullptr) {
 				std::cout << "ERROR: No object with ID:" << id << " found" << std::endl;
@@ -302,9 +299,89 @@ void Core::ConsoleInterpretation(std::string* command) const {
 	}
 }
 
+void Core::DrawPauseLogo(const int x, const int y, const SDL_Color color) {
+	SDL_SetRenderDrawColor(renderer_, color.r, color.g, color.b, color.a);
+	SDL_Rect rect;
+	rect.x = x;
+	rect.y = y;
+	rect.w = 10;
+	rect.h = 30;
+	SDL_RenderFillRect(renderer_, &rect);
+	rect.x = x - 15;
+	rect.y = y;
+	rect.w = 10;
+	rect.h = 30;
+	SDL_RenderFillRect(renderer_, &rect);
+}
+
+void Core::DrawSettingPackage(TextPackage* package) const {
+	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, SDL_ALPHA_OPAQUE);
+	Vector2 position(package->settingsBox->x, package->settingsBox->y);
+	position = AdjustZoomOrigin(position, originX_, originY_, metersPerPixel_);
+	package->settingsBox->x = position.x();
+	package->settingsBox->y = position.y();
+	SDL_RenderFillRect(renderer_, package->settingsBox);
+
+	for (int i = 0; i < package->package_size; i++) {
+		auto current_setting = package->settings[i];
+		textDisplay_->CreateText(
+			current_setting.settingTextBox,
+			&current_setting.text,
+			&current_setting.fontPath,
+			current_setting.fontSize
+		);
+		textDisplay_->DisplayText();
+	}
+}
+
 bool Core::IsNumber(const std::string& s) {
 	// Checks the first character and the last character
 	return (!(s.empty()) && isdigit(s[0]));
+}
+
+void Core::DrawCircle(Vector2 location, int radius, SDL_Color* color) const {
+
+	radius = static_cast<int>(static_cast<float>(radius) / metersPerPixel_);
+
+	location = TransposePosition(location, originX_, originY_);
+	location = ZoomPosition(location, metersPerPixel_);
+	location = TransposePosition(location, -originX_, -originY_);
+
+	for (auto dy = 1; dy <= radius; dy++) {
+		const auto dx = floor(sqrt((2.0 * radius * dy) - (dy * dy)));
+		SDL_SetRenderDrawColor(renderer_, color->r, color->g, color->b, color->a);
+		SDL_RenderDrawLine(renderer_,
+		    static_cast<int>(location.x() - dx), 
+			static_cast<int>(location.y() + dy - radius),
+			static_cast<int>(location.x() + dx),
+		    static_cast<int>(location.y() + dy - radius)
+		);
+		
+		SDL_RenderDrawLine(renderer_,
+			static_cast<int>(location.x() - dx), 
+			static_cast<int>(location.y() - dy + radius), 
+			static_cast<int>(location.x() + dx), 
+			static_cast<int>(location.y() - dy + radius)
+		);
+	}
+}
+
+void Core::StabilizeFPS() {
+	updateFreq_ = 1000 / fps_;
+
+	currentTime_ = SDL_GetTicks();
+
+	int sleepTime = (updateFreq_ - (currentTime_ - lastUpdated_));
+
+	if (sleepTime < 1) {
+		sleepTime = 1;
+	} else if (sleepTime > updateFreq_) {
+		sleepTime = updateFreq_;
+	}
+
+	SDL_Delay(sleepTime);
+
+	lastUpdated_ = currentTime_;
 }
 
 void Core::UpdateGraphics() const {
@@ -313,19 +390,64 @@ void Core::UpdateGraphics() const {
 
 	PhysicsObject* current = universe_->GetFirst();
 	while (current != nullptr) {
-		current->DrawCircle();
+		DrawCircle(*current->GetLocation(), static_cast<int>(current->GetRadius()), current->GetColor());
+		//current->DrawCircle(metersPerPixel_);
 		current->ResetColor();
 		current = current->next;
 	}
 
 	// Draw line between selected object and mouse
 	if (selectedObject_ != nullptr && selectedObjectAction_ == 1) {
-		SDL_RenderDrawLine(renderer_, static_cast<int>(selectedObject_->GetX()),
-		                   static_cast<int>(selectedObject_->GetY()), mouseX_, mouseY_);
+
+		Vector2 newPos = AdjustZoomOrigin(*selectedObject_->GetLocation(), originX_, originY_, metersPerPixel_);
+
+		SDL_RenderDrawLine(renderer_, static_cast<int>(newPos.x()),
+		                   static_cast<int>(newPos.y()), mouseX_, mouseY_);
 	}
 	// Display settings box
 	else if (selectedObject_ != nullptr && selectedObjectAction_ == 2) {
 		TextPackage package = selectedObject_->PrepareObjectSettings();
 		DrawSettingPackage(&package);
 	}
+}
+
+Vector2 AdjustZoomOrigin(Vector2 position, const int origin_x, const int origin_y, const float meters_per_second) {
+	position = TransposePosition(position, origin_x, origin_y);
+	position = ZoomPosition(position, meters_per_second);
+	position = TransposePosition(position, -origin_x, -origin_y);
+	return position;
+}
+
+Vector2 TransposePosition(Vector2 position, const int origin_x, const int origin_y) {
+
+	const auto positionX = position.x() - origin_x;
+	const auto positionY = position.y() - origin_y;
+
+	position.Set(positionX, positionY);
+
+	return position;
+}
+
+Vector2 ZoomPosition(Vector2 position, const float meters_per_pixel) {
+	const auto positionX = position.x() / meters_per_pixel;
+	const auto positionY = position.y() / meters_per_pixel;
+
+	position.Set(positionX, positionY);
+
+	return position;
+}
+
+void RenderLine(SDL_Renderer* renderer, const int x1, const int y1, const int x2, const int y2, const float meters_per_pixel, const int origin_x, const int origin_y) {
+	Vector2 position(static_cast<float>(x1), static_cast<float>(y1));
+	Vector2 positionTwo(static_cast<float>(x2), static_cast<float>(y2));
+
+	position = TransposePosition(position, origin_x, origin_y);
+	position = ZoomPosition(position, meters_per_pixel);
+	position = TransposePosition(position, -origin_x, -origin_y);
+
+	positionTwo = TransposePosition(positionTwo, origin_x, origin_y);
+	positionTwo = ZoomPosition(positionTwo, meters_per_pixel);
+	positionTwo = TransposePosition(positionTwo, -origin_x, -origin_y);
+
+	SDL_RenderDrawLine(renderer, static_cast<int>(position.x()), static_cast<int>(position.y()), static_cast<int>(positionTwo.x()), static_cast<int>(positionTwo.y()));
 }

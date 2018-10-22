@@ -18,10 +18,9 @@ Vector2 SDLPointToVec2(SDL_Point* point) {
 	return Vector2{static_cast<float>(point->x), static_cast<float>(point->y)};
 }
 
-
 ////////////////////////////////////////////////// PhysicsEngine //////////////////////////////////////////////////////////////
 
-void PhysicsEngine::UpdatePhysics(PhysicsObject* first, float timeInterval) const {
+void PhysicsEngine::UpdatePhysics(PhysicsObject* first, const float time_interval) const {
 	// Temporary variables
 	PhysicsObject* current = first;
 	PhysicsObject* currentMatcher = first;
@@ -44,64 +43,25 @@ void PhysicsEngine::UpdatePhysics(PhysicsObject* first, float timeInterval) cons
 			F = G --------
 				    r^2
 			*/
-			const float forceStrength = static_cast<float>(6.672f * pow(10, -11)) * ((current->GetMass() * currentMatcher->GetMass()) / pow(DistanceDifference(current, currentMatcher), 2));
-			dir = dir.SetMag(forceStrength * 100000 / current->GetMass());
+			const float forceStrength = static_cast<float>(6.672f * pow(10, -11)) * (static_cast<float>(current->GetMass() * static_cast<float>(currentMatcher->GetMass())) / pow(DistanceDifference(current, currentMatcher), 2));
+			dir = dir.SetMag(forceStrength / static_cast<float>(current->GetMass()));
 
 			current->ApplyForce(dir);
 
-			/*
-			if (showForces_) {
-				SDL_SetRenderDrawColor(Core::renderer_, 20, 20, 20, 255);
-				SDL_RenderDrawLine(Core::renderer_, current->GetLocation()->x(), current->GetLocation()->y(), 
-					pos2->x(), pos2->y());	
-			}*/
-
 			currentMatcher = currentMatcher->next;
 		}
-		// calc F
-		const auto firstForce = current->GetFirstForce();
-		auto prevForce = firstForce;
-		auto currentForce = firstForce;
-		int listCount = 0;
-		Vector2 totalForce;
+		// Set velocity
+		current->SetVelocity(*current->GetVelocity() + current->GetAcceleration()->SetMag(time_interval));
 
-		while (currentForce != nullptr) {
-			totalForce = totalForce + currentForce->force;
-			listCount++;
-			currentForce = currentForce->next;
-			delete prevForce;
-			prevForce = currentForce;
-		}
-		totalForce = totalForce.Divide(listCount);
-
-		std::cout << totalForce.x() << " : " << totalForce.y() << std::endl;
-
-		// Update acceleration
-		// a = F / m
-		Vector2 acceleration = totalForce.Divide(current->GetMass());
-
-		// Update velocity
-		// v = v0 + at
-		Vector2 velocity = *current->GetVelocity() + acceleration.SetMag(timeInterval);
-
-		// Update location
-		// s = v * t
-		Vector2 location = velocity.SetMag(timeInterval);
-
-		current->SetAcceleration(acceleration);
-		current->SetVelocity(velocity);
-		current->SetLocation(location);
-
-		//current->SetAcceleration(current->GetForce()->Divide(current->GetMass()));
-
-		//current->SetVelocity(*current->GetVelocity() + current->GetAcceleration()->SetMag(timeInterval));
-		// Old code
-		//current->SetVelocity(*current->GetVelocity() + *current->GetAcceleration());
-
-		//current->SetLocation(*current->GetLocation() + *current->GetVelocity());
 		// Set location --
+		current->SetLocation(*current->GetLocation() + *current->GetVelocity());
 
-		current->Update();
+
+		// Reset acceleration
+		current->GetAcceleration()->SetMag(0);
+		
+
+		//current->Update();
 		current = current->next;
 	}
 }

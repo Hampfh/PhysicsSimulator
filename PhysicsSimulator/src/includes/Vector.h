@@ -6,7 +6,6 @@
 // Apache License 2.0
 
 class Vector2 {
-private:
 	friend std::ostream& operator<<(std::ostream& os, Vector2 vector);
 	float _x = 0.0f;
 	float _y = 0.0f;

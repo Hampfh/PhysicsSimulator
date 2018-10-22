@@ -1,6 +1,7 @@
 #include "Universe.h"
+#include "Core.h"
 
-PhysicsObject::PhysicsObject(const int id, SDL_Point* position, const int radius, const float mass, SDL_Color* color)
+PhysicsObject::PhysicsObject(const int id, SDL_Point* position, const double radius, const double mass, SDL_Color* color)
 : objectId_(id), radius_(radius), mass_(mass), color_(*color) {
 	location_.Set(static_cast<float>(position->x), static_cast<float>(position->y));
 	velocity_.Set(0,0);
@@ -9,40 +10,7 @@ PhysicsObject::PhysicsObject(const int id, SDL_Point* position, const int radius
 }
 
 void PhysicsObject::ApplyForce(const Vector2 force) {
-	// Add vector to linked queue
-	if (firstForce_ == nullptr) {
-		firstForce_ = new ForceItem;
-		lastForce_ = firstForce_;
-		firstForce_->force = force;
-	} else {
-		lastForce_->next = new ForceItem;
-		lastForce_ = lastForce_->next;
-		lastForce_->force = force;
-	}
-
-	/* Old code 
 	acceleration_ = acceleration_ + force;
-	*/
-}
-
-void PhysicsObject::DrawCircle() const {
-	for (double dy = 1; dy <= radius_; dy += 1) {
-		const double dx = floor(sqrt((2.0 * radius_ * dy) - (dy * dy)));
-		SDL_SetRenderDrawColor(Core::renderer_, color_.r, color_.g, color_.b, color_.a);
-		SDL_RenderDrawLine(Core::renderer_,
-		    static_cast<int>(location_.x() - dx), 
-			static_cast<int>(location_.y() + dy - radius_),
-			static_cast<int>(location_.x() + dx),
-		    static_cast<int>(location_.y() + dy - radius_)
-		);
-		
-		SDL_RenderDrawLine(Core::renderer_, 
-			static_cast<int>(location_.x() - dx), 
-			static_cast<int>(location_.y() - dy + radius_), 
-			static_cast<int>(location_.x() + dx), 
-			static_cast<int>(location_.y() - dy + radius_)
-		);
-	}
 }
 
 TextPackage PhysicsObject::PrepareObjectSettings() {
@@ -94,20 +62,12 @@ TextPackage PhysicsObject::PrepareObjectSettings() {
 	// Insert setting into package
 	package.settings[settingNum - 1] = setting;
 
-	// Settings container
 	settingsBox_.x = this->GetX();
 	settingsBox_.y = this->GetY();
 	settingsBox_.w = 200;
 	settingsBox_.h = settingNum * settingFontSize + 30;
 
 	return package;
-}
-
-// Updates the single object
-void PhysicsObject::Update() {
-	velocity_ = velocity_ + acceleration_;
-	location_ = location_ + velocity_;
-	acceleration_.SetMag(0);
 }
 
 void PhysicsObject::SetLocation(const Vector2 location) {
@@ -139,6 +99,12 @@ void PhysicsObject::ResetColor() {
 	color_ = defaultColor_;
 }
 
+Universe::Universe(float* meters_per_pixel, int* origin_x, int* origin_y) {
+	metersPerPixel_ = meters_per_pixel;
+	originX_ = origin_x;
+	originY_ = origin_y;
+}
+
 Universe::~Universe() {
 	PhysicsObject* current = firstObject_;
 	PhysicsObject* lastCurrent = firstObject_;
@@ -150,10 +116,10 @@ Universe::~Universe() {
 	}
 }
 
-PhysicsObject* Universe::GetFirst() {
+PhysicsObject* Universe::GetFirst() const {
 	return firstObject_;
 }
-PhysicsObject* Universe::GetLast() {
+PhysicsObject* Universe::GetLast() const {
 	return lastObject_;
 }
 PhysicsObject* Universe::GetObjectOnPosition(Vector2* location) const {
@@ -166,9 +132,18 @@ PhysicsObject* Universe::GetObjectOnPosition(Vector2* location) const {
 
 	// Go through all objects
 	while (current != nullptr) {
-		
-		const int distanceBetween = static_cast<int>(DistanceDifference(current->GetLocation(), location)); 
-		if (distanceBetween <= current->GetRadius()) {
+
+		Vector2 newLocation = *current->GetLocation();
+		newLocation = TransposePosition(newLocation, *originX_, *originY_);
+		newLocation = ZoomPosition(newLocation, *metersPerPixel_);
+		newLocation = TransposePosition(newLocation, -*originX_, -*originY_);
+
+		SDL_SetRenderDrawColor(Core::renderer_, 20, 20, 20, 255);
+		SDL_RenderDrawLine(Core::renderer_, newLocation.x() - 10, newLocation.y(), newLocation.x() + 10, newLocation.y());
+		SDL_RenderDrawLine(Core::renderer_, newLocation.x(), newLocation.y() + 10, newLocation.x(), newLocation.y() - 10);
+
+		const auto distanceBetween = static_cast<int>(DistanceDifference(&newLocation, location)); 
+		if (distanceBetween <= current->GetRadius() / *metersPerPixel_) {
 			return current;
 		}
 
@@ -176,7 +151,7 @@ PhysicsObject* Universe::GetObjectOnPosition(Vector2* location) const {
 	}
 	return nullptr;
 }
-PhysicsObject* Universe::GetObjectWithId(int id) const {
+PhysicsObject* Universe::GetObjectWithId(const int id) const {
 	if (firstObject_ == nullptr) {
 		return nullptr;
 	}
@@ -207,15 +182,15 @@ void Universe::InsertObject(PhysicsObject* object) {
 	}
 }
 
-PhysicsObject* Universe::SummonObject(SDL_Point* position, int radius, int mass, SDL_Color* color) {
-	int new_id;
+PhysicsObject* Universe::SummonObject(SDL_Point* position, const double radius, const double mass, SDL_Color* color) {
+	int newId;
 	if (firstObject_ == nullptr) {
-		new_id = 0;
+		newId = 0;
 	} else {
-		new_id = lastObject_->GetId() + 1;
+		newId = lastObject_->GetId() + 1;
 	}
 
-	PhysicsObject* const newObject = new PhysicsObject{new_id, position, radius, static_cast<float>(mass), color};
+	PhysicsObject* newObject = new PhysicsObject{newId, position, radius, mass, color};
 	InsertObject(newObject);
 	return newObject;
 }

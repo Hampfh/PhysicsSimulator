@@ -18,19 +18,11 @@ struct TextPackage {
 	SDL_Rect* settingsBox = nullptr;
 };
 
-struct ForceItem {
-	Vector2 force;
-	ForceItem* next = nullptr;
-};
-
 class PhysicsObject {
 	const int objectId_;
 
-	int radius_;
-	float mass_;
-
-	ForceItem* firstForce_ = nullptr;
-	ForceItem* lastForce_ = nullptr;
+	double radius_;
+	double mass_;
 
 	Vector2 location_;
 	Vector2 velocity_;
@@ -44,23 +36,21 @@ class PhysicsObject {
 public:
 	PhysicsObject* next = nullptr;
 
-	PhysicsObject(int id, SDL_Point* position, int radius, float mass, SDL_Color* color);
+	PhysicsObject(int id, SDL_Point* position, double radius, double mass, SDL_Color* color);
 	void ApplyForce(Vector2 force);
-	void DrawCircle() const;
 	TextPackage PrepareObjectSettings();
 
-	ForceItem* GetFirstForce() { return firstForce_; };
-	ForceItem* GetLastForce() { return lastForce_; };
 	Vector2* GetLocation() { return &location_; };
 	Vector2* GetVelocity() { return &velocity_; };
 	Vector2* GetAcceleration() { return &acceleration_; };
 	SDL_Color* GetColor() { return &color_; };
-	int GetRadius() const { return radius_; };
-	float GetMass() const { return mass_; };
+	double GetRadius() const { return radius_; };
+	double GetMass() const { return mass_; };
 	float GetX() const { return location_.x(); };
 	float GetY() const { return location_.y(); };
 	int GetId() const { return objectId_; };
 
+	void SetForceCount(int force_count);
 	void SetLocation(Vector2 location);
 	void SetVelocity(Vector2 velocity);
 	void SetAcceleration(Vector2 acceleration);
@@ -74,13 +64,19 @@ class Universe {
 	PhysicsObject* firstObject_ = nullptr;
 	PhysicsObject* lastObject_ = nullptr;
 
+	float* metersPerPixel_ = nullptr;
+
+	int* originX_;
+	int* originY_;
+
 	void InsertObject(PhysicsObject* object);
 public:
+	Universe(float* meters_per_pixel, int* origin_x, int* origin_y);
 	~Universe();
 
 	PhysicsObject* GetFirst() const;
 	PhysicsObject* GetLast() const;
 	PhysicsObject* GetObjectOnPosition(Vector2* location) const;
 	PhysicsObject* GetObjectWithId(int id) const;
-	PhysicsObject* SummonObject(SDL_Point* position, int radius, int mass, SDL_Color* color);
+	PhysicsObject* SummonObject(SDL_Point* position, double radius, double mass, SDL_Color* color);
 };
