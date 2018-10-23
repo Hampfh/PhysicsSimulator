@@ -32,7 +32,7 @@ class Core {
 	int originX_, originY_;
 
 	// Interval in seconds, time between frames
-	float timeInterval_ = 2;
+	float timeInterval_ = 0.016f;
 	float zoom_ = 1.0f;
 
 	// Requested frame rate

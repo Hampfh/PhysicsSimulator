@@ -101,7 +101,7 @@ void Core::OnEvent(SDL_Event* event) {
 				std::cout << "Zoom: " << zoom_ << std::endl;
 				std::cout << "Mousex: " << mouseX_ << " Mousey: " << mouseY_ << std::endl;
 
-				const double earth = 8829;
+				const double earth = 10000;
 				const double earthRadius = 10;
 
 				// Summon sphere
@@ -203,6 +203,9 @@ void Core::OnEvent(SDL_Event* event) {
 }
 
 void Core::OnLoop() {
+
+	std::cout << "FPS: " << fps_ << " Frequency: " << static_cast<float>(updateFreq_) / static_cast<float>(1000) << std::endl;
+
 	if (!pause_) {
 		pe_->UpdatePhysics(universe_->GetFirst(), timeInterval_);
 		// Action two can't exist in non paused
