@@ -46,8 +46,8 @@ public:
 	SDL_Color* GetColor() { return &color_; };
 	double GetRadius() const { return radius_; };
 	double GetMass() const { return mass_; };
-	float GetX() const { return location_.x(); };
-	float GetY() const { return location_.y(); };
+	float GetX() const { return location_.x; };
+	float GetY() const { return location_.y; };
 	int GetId() const { return objectId_; };
 
 	void SetForceCount(int force_count);
@@ -73,6 +73,7 @@ class Universe {
 public:
 	Universe(float* meters_per_pixel, int* origin_x, int* origin_y);
 	~Universe();
+	void ClearUniverse();
 
 	PhysicsObject* GetFirst() const;
 	PhysicsObject* GetLast() const;

@@ -7,8 +7,8 @@ float DistanceDifference(PhysicsObject* point, PhysicsObject* point_two) {
 	return sqrt(pow(differenceX, 2) + pow(differenceY, 2));
 }
 float DistanceDifference(Vector2* point, Vector2* point_two) {
-	const float differenceX = abs(point->x() - point_two->x());
-	const float differenceY = abs(point->y() - point_two->y());
+	const float differenceX = abs(point->x - point_two->x);
+	const float differenceY = abs(point->y - point_two->y);
 
 	return sqrt(pow(differenceX, 2) + pow(differenceY, 2));
 }
@@ -50,11 +50,14 @@ void PhysicsEngine::UpdatePhysics(PhysicsObject* first, const float time_interva
 
 			currentMatcher = currentMatcher->next;
 		}
+
 		// Set velocity
+		// v = v0 + a * delta-t
 		current->SetVelocity(*current->GetVelocity() + current->GetAcceleration()->SetMag(time_interval));
 
 		// Set location --
-		current->SetLocation(*current->GetLocation() + *current->GetVelocity());
+		// s = s0 + v + delta-t
+		current->SetLocation(*current->GetLocation() + current->GetVelocity()->SetMag(time_interval));
 
 
 		// Reset acceleration

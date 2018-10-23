@@ -3,9 +3,12 @@
 
 PhysicsObject::PhysicsObject(const int id, SDL_Point* position, const double radius, const double mass, SDL_Color* color)
 : objectId_(id), radius_(radius), mass_(mass), color_(*color) {
-	location_.Set(static_cast<float>(position->x), static_cast<float>(position->y));
-	velocity_.Set(0,0);
-	acceleration_.Set(0, 0);
+	location_.x = static_cast<float>(position->x);
+	location_.y = static_cast<float>(position->y);
+	velocity_.x = 0;
+	velocity_.y = 0;
+	acceleration_.x = 0;
+	acceleration_.y = 0;
 	defaultColor_ = color_;
 }
 
@@ -116,6 +119,20 @@ Universe::~Universe() {
 	}
 }
 
+void Universe::ClearUniverse() {
+	PhysicsObject* current = firstObject_;
+	PhysicsObject* prev = firstObject_;
+
+	while (current != nullptr) {
+		current = current->next;
+		delete prev;
+		prev = current;
+	}
+	firstObject_ = nullptr;
+	lastObject_ = nullptr;
+}
+
+
 PhysicsObject* Universe::GetFirst() const {
 	return firstObject_;
 }
@@ -134,13 +151,13 @@ PhysicsObject* Universe::GetObjectOnPosition(Vector2* location) const {
 	while (current != nullptr) {
 
 		Vector2 newLocation = *current->GetLocation();
-		newLocation = TransposePosition(newLocation, *originX_, *originY_);
-		newLocation = ZoomPosition(newLocation, *metersPerPixel_);
-		newLocation = TransposePosition(newLocation, -*originX_, -*originY_);
+		TransposePosition(&newLocation, *originX_, *originY_);
+		ZoomPosition(&newLocation, *metersPerPixel_);
+		TransposePosition(&newLocation, -*originX_, -*originY_);
 
 		SDL_SetRenderDrawColor(Core::renderer_, 20, 20, 20, 255);
-		SDL_RenderDrawLine(Core::renderer_, newLocation.x() - 10, newLocation.y(), newLocation.x() + 10, newLocation.y());
-		SDL_RenderDrawLine(Core::renderer_, newLocation.x(), newLocation.y() + 10, newLocation.x(), newLocation.y() - 10);
+		SDL_RenderDrawLine(Core::renderer_, newLocation.x - 10, newLocation.y, newLocation.x + 10, newLocation.y);
+		SDL_RenderDrawLine(Core::renderer_, newLocation.x, newLocation.y + 10, newLocation.x, newLocation.y - 10);
 
 		const auto distanceBetween = static_cast<int>(DistanceDifference(&newLocation, location)); 
 		if (distanceBetween <= current->GetRadius() / *metersPerPixel_) {

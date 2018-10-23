@@ -32,10 +32,10 @@ class Core {
 	int originX_, originY_;
 
 	// Interval in seconds, time between frames
-	float timeInterval_ = 20000000;
-	float metersPerPixel_ = 1.0f;
+	float timeInterval_ = 2;
+	float zoom_ = 1.0f;
 
-	// Requested framerate
+	// Requested frame rate
 	int fps_;
 	int updateFreq_;
 
@@ -74,8 +74,9 @@ public:
 	void DrawCircle(Vector2 location, int radius, SDL_Color* color) const;
 };
 
-Vector2 AdjustZoomOrigin(Vector2 position, int origin_x, int origin_y, float meters_per_second);
-Vector2 TransposePosition(Vector2 position, int origin_x, int origin_y);
-Vector2 ZoomPosition(Vector2 position, float meters_per_pixel);
-void RenderLine(SDL_Renderer* renderer, int x1, int y1, int x2, int y2, float meters_per_pixel, int origin_x, int origin_y);
+void ConvertCoordinates(Vector2* position, int origin_x, int origin_y, float zoom);
+void InvertYAxis(Vector2* position, int screen_height);
+void TransposePosition(Vector2* position, int origin_x, int origin_y);
+void ZoomPosition(Vector2* position, float zoom);
+void RenderLine(SDL_Renderer* renderer, int x1, int y1, int x2, int y2, float zoom, int origin_x, int origin_y);
 

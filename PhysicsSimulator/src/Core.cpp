@@ -9,8 +9,8 @@ Core::Core() {
 	pause_ = false;
 	mouseX_ = 0;
 	mouseY_ = 0;
-	originX_ = 0;
-	originY_ = 0;
+	originX_ = screenWidth_ / 2;
+	originY_ = screenHeight_ / 2;
 	updateFreq_ = 0;
 	fps_ = 60;
 }
@@ -44,7 +44,7 @@ bool Core::OnInit() {
 
 	pe_ = new PhysicsEngine;
 
-	universe_ = new Universe(&metersPerPixel_, &originX_, &originY_);
+	universe_ = new Universe(&zoom_, &originX_, &originY_);
 
 	textDisplay_ = new FontDisplay;
 
@@ -85,41 +85,47 @@ void Core::OnEvent(SDL_Event* event) {
 		}
 		// Right button clicked
 		else if (event->button.button == SDL_BUTTON_RIGHT) {
-			PhysicsObject* object = universe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_));
-			if (object == selectedObject_ && object != nullptr && selectedObjectAction_ == 2) {
+			if (hoverObject_ == selectedObject_ && hoverObject_ != nullptr && selectedObjectAction_ == 2) {
 				// Unselect the selectedObject
 				selectedObject_ = nullptr;
 				selectedObjectAction_ = 0;
 				pause_ = false;
 			}
 			// Summon a sphere if user didn't click an object
-			else if (object == nullptr) {
+			else if (hoverObject_ == nullptr) {
 
 				// Mass of earth (kg)
 				//const double earth = 5.972 * pow(10, 24);
 				//const double earthRadius = 6371*1000;
 
+				std::cout << "Zoom: " << zoom_ << std::endl;
+				std::cout << "Mousex: " << mouseX_ << " Mousey: " << mouseY_ << std::endl;
+
 				const double earth = 8829;
-				const double earthRadius = 100;
+				const double earthRadius = 10;
 
 				// Summon sphere
 				Vector2 position(mouseX_, mouseY_);
+				ConvertCoordinates(&position, originX_, originY_, zoom_);
 
-				position = AdjustZoomOrigin(position, originX_, originY_, metersPerPixel_);
-				SDL_Point point_position;
-				point_position.x = position.x();
-				point_position.y = position.y();
+				SDL_Point pointPosition;
+				pointPosition.x = position.x;
+				pointPosition.y = position.y;
+				//pointPosition.x = mouseX_;
+				//pointPosition.y = mouseY_;
+
+				std::cout << "Transposed X: " << pointPosition.x << " : Transposed Y: " << pointPosition.y << std::endl;
 
 				SDL_Color color;
 				color.r = 20;
 				color.g = 20;
 				color.b = 50;
 				color.a = 255;
-				universe_->SummonObject(&point_position, earthRadius, earth, &color);
+				universe_->SummonObject(&pointPosition, earthRadius, earth, &color);
 			}
 			else {
 				// Assign object to setting view
-				selectedObject_ = object;
+				selectedObject_ = hoverObject_;
 				selectedObjectAction_ = 2;
 				pause_ = true;
 			}
@@ -131,10 +137,10 @@ void Core::OnEvent(SDL_Event* event) {
 			if (selectedObject_ != nullptr) {
 				// Add force in the direction
 				Vector2* pos1 = selectedObject_->GetLocation();
-				Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
+				const Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 				Vector2 dir = pos2 - *pos1;
 
-				dir.SetMag(0.01f / timeInterval_);
+				dir.SetMag(0.0001f / timeInterval_);
 
 				selectedObject_->ApplyForce(dir);
 			}
@@ -150,15 +156,15 @@ void Core::OnEvent(SDL_Event* event) {
 	case SDL_MOUSEWHEEL:
 		if (event->wheel.y < 0) {
 			// Scroll against
-			originX_ = mouseX_;
-			originY_ = mouseY_;
-			metersPerPixel_ *= 1.1f;
+			//originX_ = mouseX_;
+			//originY_ = mouseY_;
+			zoom_ /= 1.1f;
 			
 		} else if (event->wheel.y > 0 ) {
 			// Scroll away
-			originX_ = mouseX_;
-			originY_ = mouseY_;
-			metersPerPixel_ /= 1.1f;
+			//originX_ = mouseX_;
+			//originY_ = mouseY_;
+			zoom_ *= 1.1f;
 		}
 		break;
 	case SDL_KEYDOWN:
@@ -184,6 +190,9 @@ void Core::OnEvent(SDL_Event* event) {
 		case SDLK_DOWN:
 			originY_ += 100;
 			break;
+		case SDLK_c:
+			universe_->ClearUniverse();
+			break;
 		default:
 			break;
 		}
@@ -204,6 +213,7 @@ void Core::OnLoop() {
 		DrawPauseLogo(screenWidth_ - 35, 10, {0, 0, 0, 255});
 	}
 
+	// Render dot on center of screen
 	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
 	SDL_RenderDrawPoint(renderer_, screenWidth_ / 2, screenHeight_ / 2);
 
@@ -317,9 +327,9 @@ void Core::DrawPauseLogo(const int x, const int y, const SDL_Color color) {
 void Core::DrawSettingPackage(TextPackage* package) const {
 	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, SDL_ALPHA_OPAQUE);
 	Vector2 position(package->settingsBox->x, package->settingsBox->y);
-	position = AdjustZoomOrigin(position, originX_, originY_, metersPerPixel_);
-	package->settingsBox->x = position.x();
-	package->settingsBox->y = position.y();
+	ConvertCoordinates(&position, originX_, originY_, zoom_);
+	package->settingsBox->x = position.x;
+	package->settingsBox->y = position.y;
 	SDL_RenderFillRect(renderer_, package->settingsBox);
 
 	for (int i = 0; i < package->package_size; i++) {
@@ -341,27 +351,27 @@ bool Core::IsNumber(const std::string& s) {
 
 void Core::DrawCircle(Vector2 location, int radius, SDL_Color* color) const {
 
-	radius = static_cast<int>(static_cast<float>(radius) / metersPerPixel_);
+	radius = static_cast<int>(static_cast<float>(radius) * zoom_);
 
-	location = TransposePosition(location, originX_, originY_);
-	location = ZoomPosition(location, metersPerPixel_);
-	location = TransposePosition(location, -originX_, -originY_);
+	TransposePosition(&location, originX_, originY_);
+	ZoomPosition(&location, zoom_);
+	TransposePosition(&location, -originX_, -originY_);
 
 	for (auto dy = 1; dy <= radius; dy++) {
 		const auto dx = floor(sqrt((2.0 * radius * dy) - (dy * dy)));
 		SDL_SetRenderDrawColor(renderer_, color->r, color->g, color->b, color->a);
 		SDL_RenderDrawLine(renderer_,
-		    static_cast<int>(location.x() - dx), 
-			static_cast<int>(location.y() + dy - radius),
-			static_cast<int>(location.x() + dx),
-		    static_cast<int>(location.y() + dy - radius)
+		    static_cast<int>(location.x - dx), 
+			static_cast<int>(location.y + dy - radius),
+			static_cast<int>(location.x + dx),
+		    static_cast<int>(location.y + dy - radius)
 		);
 		
 		SDL_RenderDrawLine(renderer_,
-			static_cast<int>(location.x() - dx), 
-			static_cast<int>(location.y() - dy + radius), 
-			static_cast<int>(location.x() + dx), 
-			static_cast<int>(location.y() - dy + radius)
+			static_cast<int>(location.x - dx), 
+			static_cast<int>(location.y - dy + radius), 
+			static_cast<int>(location.x + dx), 
+			static_cast<int>(location.y - dy + radius)
 		);
 	}
 }
@@ -398,11 +408,12 @@ void Core::UpdateGraphics() const {
 
 	// Draw line between selected object and mouse
 	if (selectedObject_ != nullptr && selectedObjectAction_ == 1) {
+		Vector2 currentPos = *selectedObject_->GetLocation();
 
-		Vector2 newPos = AdjustZoomOrigin(*selectedObject_->GetLocation(), originX_, originY_, metersPerPixel_);
+		ConvertCoordinates(&currentPos, originX_, originY_, zoom_);
 
-		SDL_RenderDrawLine(renderer_, static_cast<int>(newPos.x()),
-		                   static_cast<int>(newPos.y()), mouseX_, mouseY_);
+		SDL_RenderDrawLine(renderer_, static_cast<int>(currentPos.x),
+		                   static_cast<int>(currentPos.y), mouseX_, mouseY_);
 	}
 	// Display settings box
 	else if (selectedObject_ != nullptr && selectedObjectAction_ == 2) {
@@ -411,43 +422,35 @@ void Core::UpdateGraphics() const {
 	}
 }
 
-Vector2 AdjustZoomOrigin(Vector2 position, const int origin_x, const int origin_y, const float meters_per_second) {
-	position = TransposePosition(position, origin_x, origin_y);
-	position = ZoomPosition(position, meters_per_second);
-	position = TransposePosition(position, -origin_x, -origin_y);
-	return position;
+void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_y, const float zoom) {
+	//InvertYAxis(position, screen_height);
+	TransposePosition(position, origin_x, origin_y);
+	ZoomPosition(position, zoom);
+	TransposePosition(position, -origin_x / zoom, -origin_y / zoom);
 }
 
-Vector2 TransposePosition(Vector2 position, const int origin_x, const int origin_y) {
-
-	const auto positionX = position.x() - origin_x;
-	const auto positionY = position.y() - origin_y;
-
-	position.Set(positionX, positionY);
-
-	return position;
+void InvertYAxis(Vector2* position, const int screen_height) {
+	position->y = screen_height - position->y;
 }
 
-Vector2 ZoomPosition(Vector2 position, const float meters_per_pixel) {
-	const auto positionX = position.x() / meters_per_pixel;
-	const auto positionY = position.y() / meters_per_pixel;
+void TransposePosition(Vector2* position, const int origin_x, const int origin_y) {
 
-	position.Set(positionX, positionY);
-
-	return position;
+	position->x = position->x - origin_x;
+	position->y = position->y - origin_y;
 }
 
-void RenderLine(SDL_Renderer* renderer, const int x1, const int y1, const int x2, const int y2, const float meters_per_pixel, const int origin_x, const int origin_y) {
+void ZoomPosition(Vector2* position, const float zoom) {
+
+	position->x = position->x * zoom;
+	position->y = position->y * zoom;
+}
+
+void RenderLine(SDL_Renderer* renderer, const int x1, const int y1, const int x2, const int y2, const float zoom, const int origin_x, const int origin_y) {
 	Vector2 position(static_cast<float>(x1), static_cast<float>(y1));
 	Vector2 positionTwo(static_cast<float>(x2), static_cast<float>(y2));
 
-	position = TransposePosition(position, origin_x, origin_y);
-	position = ZoomPosition(position, meters_per_pixel);
-	position = TransposePosition(position, -origin_x, -origin_y);
+	ConvertCoordinates(&position, origin_x, origin_y, zoom);
+	ConvertCoordinates(&positionTwo, origin_x, origin_y, zoom);
 
-	positionTwo = TransposePosition(positionTwo, origin_x, origin_y);
-	positionTwo = ZoomPosition(positionTwo, meters_per_pixel);
-	positionTwo = TransposePosition(positionTwo, -origin_x, -origin_y);
-
-	SDL_RenderDrawLine(renderer, static_cast<int>(position.x()), static_cast<int>(position.y()), static_cast<int>(positionTwo.x()), static_cast<int>(positionTwo.y()));
+	SDL_RenderDrawLine(renderer, static_cast<int>(position.x), static_cast<int>(position.y), static_cast<int>(positionTwo.x), static_cast<int>(positionTwo.y));
 }
