@@ -31,16 +31,18 @@ class Core {
 	// Middle of zoom
 	int originX_, originY_;
 
-	// Interval in seconds, time between frames
-	float timeInterval_ = 0.016f;
 	float zoom_ = 1.0f;
+	float globalZoom_ = zoom_;
+
+	bool renderCrossHair_;
 
 	// Requested frame rate
 	int fps_;
-	int updateFreq_;
+	float optimalTime_; // Optimal time between frames
+	float simulationSpeed_ = 1000000000.0f; // 1 is real time, higher values makes simulation go faster than reality
 
 	// FPS
-	unsigned int lastUpdated_ = 0, currentTime_ = 0;
+	unsigned int lastUpdated_ = 0;
 
 	bool running_;
 	bool pause_;
@@ -71,7 +73,7 @@ public:
 	void StabilizeFPS();
 	void UpdateGraphics() const;
 
-	void DrawCircle(Vector2 location, int radius, SDL_Color* color) const;
+	void DrawCircle(Vector2 location, int radius, SDL_Color* color, int cross_hair) const;
 };
 
 void ConvertCoordinates(Vector2* position, int origin_x, int origin_y, float zoom);

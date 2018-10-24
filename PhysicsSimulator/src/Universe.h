@@ -36,7 +36,7 @@ class PhysicsObject {
 public:
 	PhysicsObject* next = nullptr;
 
-	PhysicsObject(int id, SDL_Point* position, double radius, double mass, SDL_Color* color);
+	PhysicsObject(int id, Vector2* position, double radius, double mass, SDL_Color* color);
 	void ApplyForce(Vector2 force);
 	TextPackage PrepareObjectSettings();
 
@@ -64,20 +64,20 @@ class Universe {
 	PhysicsObject* firstObject_ = nullptr;
 	PhysicsObject* lastObject_ = nullptr;
 
-	float* metersPerPixel_ = nullptr;
+	float* zoom_;
 
 	int* originX_;
 	int* originY_;
 
 	void InsertObject(PhysicsObject* object);
 public:
-	Universe(float* meters_per_pixel, int* origin_x, int* origin_y);
+	Universe(int* origin_x, int* origin_y, float* zoom);
 	~Universe();
 	void ClearUniverse();
 
 	PhysicsObject* GetFirst() const;
 	PhysicsObject* GetLast() const;
-	PhysicsObject* GetObjectOnPosition(Vector2* location) const;
+	PhysicsObject* GetObjectOnPosition(Vector2* location, float zoom) const;
 	PhysicsObject* GetObjectWithId(int id) const;
-	PhysicsObject* SummonObject(SDL_Point* position, double radius, double mass, SDL_Color* color);
+	PhysicsObject* SummonObject(Vector2* position, double radius, double mass, SDL_Color* color);
 };

@@ -11,8 +11,8 @@ Core::Core() {
 	mouseY_ = 0;
 	originX_ = screenWidth_ / 2;
 	originY_ = screenHeight_ / 2;
-	updateFreq_ = 0;
 	fps_ = 60;
+	renderCrossHair_ = false;
 }
 
 int Core::OnExecute() {
@@ -44,7 +44,7 @@ bool Core::OnInit() {
 
 	pe_ = new PhysicsEngine;
 
-	universe_ = new Universe(&zoom_, &originX_, &originY_);
+	universe_ = new Universe(&originX_, &originY_, &zoom_);
 
 	textDisplay_ = new FontDisplay;
 
@@ -58,8 +58,9 @@ bool Core::OnInit() {
 void Core::OnEvent(SDL_Event* event) {
 	SDL_GetMouseState(&mouseX_, &mouseY_);
 
-	hoverObject_ = universe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_));
+	hoverObject_ = universe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_), zoom_);
 
+	// Render cross hair on mouse
 	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
 	SDL_RenderDrawLine(renderer_, mouseX_ - 10, mouseY_, mouseX_ + 10, mouseY_);
 	SDL_RenderDrawLine(renderer_, mouseX_, mouseY_ + 10, mouseX_, mouseY_ - 10);
@@ -98,30 +99,18 @@ void Core::OnEvent(SDL_Event* event) {
 				//const double earth = 5.972 * pow(10, 24);
 				//const double earthRadius = 6371*1000;
 
-				std::cout << "Zoom: " << zoom_ << std::endl;
-				std::cout << "Mousex: " << mouseX_ << " Mousey: " << mouseY_ << std::endl;
-
-				const double earth = 10000;
+				const double earth = 1;
 				const double earthRadius = 10;
 
 				// Summon sphere
 				Vector2 position(mouseX_, mouseY_);
-				ConvertCoordinates(&position, originX_, originY_, zoom_);
-
-				SDL_Point pointPosition;
-				pointPosition.x = position.x;
-				pointPosition.y = position.y;
-				//pointPosition.x = mouseX_;
-				//pointPosition.y = mouseY_;
-
-				std::cout << "Transposed X: " << pointPosition.x << " : Transposed Y: " << pointPosition.y << std::endl;
 
 				SDL_Color color;
 				color.r = 20;
 				color.g = 20;
 				color.b = 50;
 				color.a = 255;
-				universe_->SummonObject(&pointPosition, earthRadius, earth, &color);
+				universe_->SummonObject(&position, earthRadius, earth, &color);
 			}
 			else {
 				// Assign object to setting view
@@ -137,17 +126,14 @@ void Core::OnEvent(SDL_Event* event) {
 			if (selectedObject_ != nullptr) {
 				// Add force in the direction
 				Vector2* pos1 = selectedObject_->GetLocation();
-				const Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
-				Vector2 dir = pos2 - *pos1;
 
-				dir.SetMag(0.0001f / timeInterval_);
+				Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 
-				selectedObject_->ApplyForce(dir);
+				ApplyIndividualForce(selectedObject_, pos2, 0.1);
 			}
-			// Unselect the selectedObject
-			selectedObject_ = nullptr;
-			selectedObjectAction_ = 0;
-		} else if (selectedObjectAction_ == 1) {
+		} 
+		
+		if (selectedObjectAction_ == 1) {
 			// Unselect the selectedObject
 			selectedObject_ = nullptr;
 			selectedObjectAction_ = 0;
@@ -155,16 +141,17 @@ void Core::OnEvent(SDL_Event* event) {
 		break;
 	case SDL_MOUSEWHEEL:
 		if (event->wheel.y < 0) {
-			// Scroll against
-			//originX_ = mouseX_;
-			//originY_ = mouseY_;
-			zoom_ /= 1.1f;
-			
+			// zoom in
+			originX_ = mouseX_;
+			originY_ = mouseY_;
+			zoom_ *= 0.9f;
+			globalZoom_ = globalZoom_ * zoom_;
 		} else if (event->wheel.y > 0 ) {
-			// Scroll away
-			//originX_ = mouseX_;
-			//originY_ = mouseY_;
+			// zoom out
+			originX_ = mouseX_;
+			originY_ = mouseY_;
 			zoom_ *= 1.1f;
+			globalZoom_ = globalZoom_ * zoom_;
 		}
 		break;
 	case SDL_KEYDOWN:
@@ -193,6 +180,9 @@ void Core::OnEvent(SDL_Event* event) {
 		case SDLK_c:
 			universe_->ClearUniverse();
 			break;
+		case SDLK_x:
+			renderCrossHair_ = !renderCrossHair_;
+			break;
 		default:
 			break;
 		}
@@ -203,11 +193,9 @@ void Core::OnEvent(SDL_Event* event) {
 }
 
 void Core::OnLoop() {
-
-	std::cout << "FPS: " << fps_ << " Frequency: " << static_cast<float>(updateFreq_) / static_cast<float>(1000) << std::endl;
-
+	//std::cout << "Zoom: " << zoom_ << " GlobalZoom: " << globalZoom_ << std::endl;
 	if (!pause_) {
-		pe_->UpdatePhysics(universe_->GetFirst(), timeInterval_);
+		pe_->UpdatePhysics(universe_->GetFirst(), optimalTime_, simulationSpeed_);
 		// Action two can't exist in non paused
 		if (selectedObjectAction_ == 2) selectedObjectAction_ = 0;
 	}
@@ -352,13 +340,18 @@ bool Core::IsNumber(const std::string& s) {
 	return (!(s.empty()) && isdigit(s[0]));
 }
 
-void Core::DrawCircle(Vector2 location, int radius, SDL_Color* color) const {
+void Core::DrawCircle(Vector2 location, int radius, SDL_Color* color, int cross_hair) const {
 
 	radius = static_cast<int>(static_cast<float>(radius) * zoom_);
 
-	TransposePosition(&location, originX_, originY_);
-	ZoomPosition(&location, zoom_);
-	TransposePosition(&location, -originX_, -originY_);
+	ConvertCoordinates(&location, originX_, originY_, zoom_);
+
+	if (cross_hair) {
+		// Render a x on the planet position
+		SDL_SetRenderDrawColor(Core::renderer_, 20, 20, 20, 255);
+		SDL_RenderDrawLine(Core::renderer_, location.x - 10, location.y, location.x + 10, location.y);
+		SDL_RenderDrawLine(Core::renderer_, location.x, location.y + 10, location.x, location.y - 10);	
+	}
 
 	for (auto dy = 1; dy <= radius; dy++) {
 		const auto dx = floor(sqrt((2.0 * radius * dy) - (dy * dy)));
@@ -380,30 +373,19 @@ void Core::DrawCircle(Vector2 location, int radius, SDL_Color* color) const {
 }
 
 void Core::StabilizeFPS() {
-	updateFreq_ = 1000 / fps_;
+	// Calculate delta time
+	optimalTime_ = static_cast<float>(1000) / static_cast<float>(fps_);
 
-	currentTime_ = SDL_GetTicks();
-
-	int sleepTime = (updateFreq_ - (currentTime_ - lastUpdated_));
-
-	if (sleepTime < 1) {
-		sleepTime = 1;
-	} else if (sleepTime > updateFreq_) {
-		sleepTime = updateFreq_;
-	}
-
-	SDL_Delay(sleepTime);
-
-	lastUpdated_ = currentTime_;
+	SDL_Delay(optimalTime_);
 }
 
 void Core::UpdateGraphics() const {
-	// Mouse is hovering over an object
+	// Highlight hover object
 	if (hoverObject_ != nullptr) { hoverObject_->SetColor(100, 20, 20); }
 
 	PhysicsObject* current = universe_->GetFirst();
 	while (current != nullptr) {
-		DrawCircle(*current->GetLocation(), static_cast<int>(current->GetRadius()), current->GetColor());
+		DrawCircle(*current->GetLocation(), static_cast<int>(current->GetRadius()), current->GetColor(), renderCrossHair_);
 		//current->DrawCircle(metersPerPixel_);
 		current->ResetColor();
 		current = current->next;
@@ -429,7 +411,7 @@ void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_
 	//InvertYAxis(position, screen_height);
 	TransposePosition(position, origin_x, origin_y);
 	ZoomPosition(position, zoom);
-	TransposePosition(position, -origin_x / zoom, -origin_y / zoom);
+	TransposePosition(position, -origin_x, -origin_y);
 }
 
 void InvertYAxis(Vector2* position, const int screen_height) {
