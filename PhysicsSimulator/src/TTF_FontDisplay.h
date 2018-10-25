@@ -7,7 +7,6 @@ struct TextElementList {
 	SDL_Rect* textRect = nullptr;
 	SDL_Color* color = nullptr;
 	TextElementList* next = nullptr;
-
 };
 
 class FontDisplay {
@@ -18,7 +17,10 @@ class FontDisplay {
 public:
 	FontDisplay();
 	~FontDisplay();
-	TextElementList* CreateTextObject(SDL_Rect box, std::string* message, std::string* font_path, int font_size);
+	TextElementList* CreateTextObject(SDL_Rect box, std::string message, std::string font_path, int font_size);
 	void DisplayText() const;
+	void DisplayText(TextElementList* text_object) const;
+	void DisplayText(TextElementList* first, TextElementList* last) const;
 	void DeleteTextObject(TextElementList* text_object);
+	void DeleteTextObjects(TextElementList* first, TextElementList* last);
 };

@@ -91,6 +91,8 @@ void Core::OnEvent(SDL_Event* event) {
 				selectedObject_ = nullptr;
 				selectedObjectAction_ = 0;
 				pause_ = false;
+
+				textDisplay_->DeleteTextObjects(tempSettingStorageFirst_, tempSettingStorageLast_);
 			}
 			// Summon a sphere if user didn't click an object
 			else if (hoverObject_ == nullptr) {
@@ -117,6 +119,24 @@ void Core::OnEvent(SDL_Event* event) {
 				selectedObject_ = hoverObject_;
 				selectedObjectAction_ = 2;
 				pause_ = true;
+
+				const auto package = selectedObject_->PrepareObjectSettings();
+
+				// Create text elements
+				for (int i = 0; i < package.package_size; i++) {
+					const auto currentSetting = package.settings[i];
+					const auto currentObject = textDisplay_->CreateTextObject(
+						currentSetting.settingTextBox, 
+						currentSetting.text, 
+						currentSetting.fontPath, 
+						currentSetting.fontSize
+					);
+					if (i == 0) {
+						tempSettingStorageFirst_ = currentObject;
+					} else if (i + 1 == package.package_size) {
+						tempSettingStorageLast_ = currentObject;
+					}
+				}
 			}
 		}
 		break;
@@ -322,17 +342,7 @@ void Core::DrawSettingPackage(TextPackage* package) const {
 	package->settingsBox->x = position.x;
 	package->settingsBox->y = position.y;
 	SDL_RenderFillRect(renderer_, package->settingsBox);
-	/*
-	for (int i = 0; i < package->package_size; i++) {
-		auto current_setting = package->settings[i];
-		textDisplay_->CreateText(
-			current_setting.settingTextBox,
-			&current_setting.text,
-			&current_setting.fontPath,
-			current_setting.fontSize
-		);
-		textDisplay_->DisplayText();
-	}*/
+	textDisplay_->DisplayText(tempSettingStorageFirst_, tempSettingStorageLast_);
 }
 
 bool Core::IsNumber(const std::string& s) {

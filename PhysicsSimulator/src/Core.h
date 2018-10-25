@@ -43,6 +43,9 @@ class Core {
 	// FPS
 	unsigned int lastUpdated_ = 0;
 
+	TextElementList* tempSettingStorageFirst_ = nullptr;
+	TextElementList* tempSettingStorageLast_ = nullptr;
+
 	bool running_;
 	bool pause_;
 	SDL_Window* window_;
