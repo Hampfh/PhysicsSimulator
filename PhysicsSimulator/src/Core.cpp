@@ -93,6 +93,7 @@ void Core::OnEvent(SDL_Event* event) {
 				pause_ = false;
 
 				textDisplay_->DeleteTextObjects(tempSettingStorageFirst_, tempSettingStorageLast_);
+				std::cout << "Removed text textures" << std::endl;
 			}
 			// Summon a sphere if user didn't click an object
 			else if (hoverObject_ == nullptr) {
@@ -122,6 +123,14 @@ void Core::OnEvent(SDL_Event* event) {
 
 				const auto package = selectedObject_->PrepareObjectSettings();
 
+				std::cout << "ADDED text textures" << std::endl;
+
+				SDL_Color textColor;
+				textColor.r = 20;
+				textColor.g = 20;
+				textColor.b = 20;
+				textColor.a = 255;
+
 				// Create text elements
 				for (int i = 0; i < package.package_size; i++) {
 					const auto currentSetting = package.settings[i];
@@ -129,7 +138,8 @@ void Core::OnEvent(SDL_Event* event) {
 						currentSetting.settingTextBox, 
 						currentSetting.text, 
 						currentSetting.fontPath, 
-						currentSetting.fontSize
+						currentSetting.fontSize,
+						textColor
 					);
 					if (i == 0) {
 						tempSettingStorageFirst_ = currentObject;

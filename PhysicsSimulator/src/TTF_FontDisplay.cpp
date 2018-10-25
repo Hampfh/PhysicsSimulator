@@ -10,7 +10,7 @@ FontDisplay::~FontDisplay() {
 	TTF_Quit();
 }
 
-TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string message, std::string font_path, const int font_size) {
+TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string message, std::string font_path, const int font_size, SDL_Color fg) {
 
 	// Add textObject to list
 	if (first_ == nullptr) {
@@ -27,7 +27,7 @@ TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string m
 		std::cout << "Failed to load font" << std::endl;
 		return nullptr;
 	}
-	SDL_Surface* surface = TTF_RenderText_Solid(font, message.c_str(), *last_->color);
+	SDL_Surface* surface = TTF_RenderText_Solid(font, message.c_str(), fg);
 	if (!surface) {
 		std::cout << "Failed to create text surface" << std::endl;
 		return nullptr;
@@ -46,8 +46,6 @@ TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string m
 	last_->textRect->y = box.y;
 	last_->textRect->w = box.w;
 	last_->textRect->h = box.h;
-
-	last_->color = new SDL_Color();
 
 	if (SDL_QueryTexture(last_->textTexture, nullptr, nullptr, &last_->textRect->w, &last_->textRect->h) != 0) {
 		std::cout << "QueryTexture not loading" << std::endl;
@@ -103,7 +101,6 @@ void FontDisplay::DeleteTextObject(TextElementList* text_object) {
 				prev->next = current->next;
 			}
 			// Delete current
-			delete current->color;
 			delete current->textRect;
 			delete current;
 		}
