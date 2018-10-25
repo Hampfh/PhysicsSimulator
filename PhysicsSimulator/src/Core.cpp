@@ -99,7 +99,7 @@ void Core::OnEvent(SDL_Event* event) {
 				//const double earth = 5.972 * pow(10, 24);
 				//const double earthRadius = 6371*1000;
 
-				const double earth = 1;
+				const double earth = 1000;
 				const double earthRadius = 10;
 
 				// Summon sphere
@@ -322,7 +322,7 @@ void Core::DrawSettingPackage(TextPackage* package) const {
 	package->settingsBox->x = position.x;
 	package->settingsBox->y = position.y;
 	SDL_RenderFillRect(renderer_, package->settingsBox);
-
+	/*
 	for (int i = 0; i < package->package_size; i++) {
 		auto current_setting = package->settings[i];
 		textDisplay_->CreateText(
@@ -332,7 +332,7 @@ void Core::DrawSettingPackage(TextPackage* package) const {
 			current_setting.fontSize
 		);
 		textDisplay_->DisplayText();
-	}
+	}*/
 }
 
 bool Core::IsNumber(const std::string& s) {

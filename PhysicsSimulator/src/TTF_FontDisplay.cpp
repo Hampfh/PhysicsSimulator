@@ -4,60 +4,86 @@
 FontDisplay::FontDisplay() {
 	TTF_Init();
 
-	currentColor_ = new SDL_Color();
-	textRect_ = new SDL_Rect;
 }
 
 FontDisplay::~FontDisplay() {
 	TTF_Quit();
 }
 
+TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string* message, std::string* font_path, const int font_size) {
 
-void FontDisplay::SetFontColor(SDL_Color* color) {
-	this->currentColor_ = color;
-}
+	// Add textObject to list
+	if (first_ == nullptr) {
+		first_ = new TextElementList;
+		last_ = first_;
+	} else {
+		last_->next = new TextElementList;
+		last_ = last_->next;
+	}
 
-int FontDisplay::CreateText(const SDL_Rect box, std::string* message, std::string* font_path, const int font_size) {
-	font_ = TTF_OpenFont(font_path->c_str(), font_size);
+	TTF_Font* font = TTF_OpenFont(font_path->c_str(), font_size);
 	// Test if font was successfully imported 
-	if (!font_) {
+	if (!font) {
 		std::cout << "Failed to load font" << std::endl;
-		return 1;
+		return nullptr;
 	}
-	surface_ = TTF_RenderText_Solid(font_, message->c_str(), *currentColor_);
-	if (!surface_) {
+	SDL_Surface* surface = TTF_RenderText_Solid(font, message->c_str(), *last_->color);
+	if (!surface) {
 		std::cout << "Failed to create text surface" << std::endl;
-		return 1;
+		return nullptr;
 	}
 
-	// Clear texture if not empty
-	if (texture_ != nullptr) {
-		SDL_DestroyTexture(texture_);
-	}
-
-	texture_ = SDL_CreateTextureFromSurface(Core::renderer_, surface_);
-	if (!texture_) {
+	last_->textTexture = SDL_CreateTextureFromSurface(Core::renderer_, surface);
+	if (!last_->textTexture) {
 		std::cout << "Failed to create text texture" << std::endl;
-		return 1;
+		return nullptr;
 	}
-	SDL_FreeSurface(surface_);
-	TTF_CloseFont(font_);
+	SDL_FreeSurface(surface);
+	TTF_CloseFont(font);
 
-	textRect_->x = box.x;
-	textRect_->y = box.y;
-	textRect_->w = box.x;
-	textRect_->h = box.y;
+	last_->textRect = new SDL_Rect();
+	last_->textRect->x = box.x;
+	last_->textRect->y = box.y;
+	last_->textRect->w = box.w;
+	last_->textRect->h = box.h;
 
-	if (SDL_QueryTexture(texture_, nullptr, nullptr, &textRect_->w, &textRect_->h) != 0) {
+	last_->color = new SDL_Color();
+
+	if (SDL_QueryTexture(last_->textTexture, nullptr, nullptr, &last_->textRect->w, &last_->textRect->h) != 0) {
 		std::cout << "QueryTexture not loading" << std::endl;
-		return 1;
+		return nullptr;
 	}
-	return 0;
+	return last_;
 }
 
 void FontDisplay::DisplayText() const {
 	// Copy out text to screen
-	SDL_RenderCopy(Core::renderer_, texture_, nullptr, textRect_);
+	SDL_RenderCopy(Core::renderer_, last_->textTexture, nullptr, last_->textRect);
 	// Delete the texture after display
-	SDL_DestroyTexture(texture_);
+	SDL_DestroyTexture(last_->textTexture);
+}
+
+void FontDisplay::DeleteTextObject(TextElementList* text_object) {
+	SDL_DestroyTexture(text_object->textTexture);
+	auto current = first_;
+	auto prev = first_;
+	while (current != nullptr) {
+
+		if (current == text_object) {
+			if (current == first_) {
+				first_ = first_->next;
+			} else if (current == last_){
+				last_ = prev;
+			} else {
+				prev->next = current->next;
+			}
+			// Delete current
+			delete current->color;
+			delete current->textRect;
+			delete current;
+		}
+
+		prev = current;
+		current = current->next;
+	}
 }

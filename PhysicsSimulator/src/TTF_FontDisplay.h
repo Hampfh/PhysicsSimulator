@@ -2,17 +2,23 @@
 #include <SDL2_TTF/SDL_ttf.h>
 #include <iostream>
 
+struct TextElementList {
+	SDL_Texture* textTexture = nullptr;
+	SDL_Rect* textRect = nullptr;
+	SDL_Color* color = nullptr;
+	TextElementList* next = nullptr;
+
+};
+
 class FontDisplay {
-	TTF_Font* font_ = nullptr;
-	SDL_Surface* surface_ = nullptr;
-	SDL_Texture* texture_ = nullptr;
-	SDL_Color* currentColor_ = nullptr;
-	SDL_Rect* textRect_ = nullptr;
+	
+	TextElementList* first_ = nullptr;
+	TextElementList* last_ = nullptr;
 
 public:
 	FontDisplay();
 	~FontDisplay();
-	void SetFontColor(SDL_Color* color);
-	int CreateText(SDL_Rect box, std::string* message, std::string* font_path, int font_size);
+	TextElementList* CreateTextObject(SDL_Rect box, std::string* message, std::string* font_path, int font_size);
 	void DisplayText() const;
+	void DeleteTextObject(TextElementList* text_object);
 };

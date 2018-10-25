@@ -8,7 +8,6 @@
 #include <locale> // std::isdigit
 #include <vector>
 // For console reading
-#include <vector>
 #include <thread>
 #include <sstream>  
 
@@ -39,7 +38,7 @@ class Core {
 	// Requested frame rate
 	int fps_;
 	float optimalTime_; // Optimal time between frames
-	float simulationSpeed_ = 1000000000.0f; // 1 is real time, higher values makes simulation go faster than reality
+	float simulationSpeed_ = 100000.0f; // 1 is real time, higher values makes simulation go faster than reality
 
 	// FPS
 	unsigned int lastUpdated_ = 0;
