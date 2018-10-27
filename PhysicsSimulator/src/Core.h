@@ -31,14 +31,13 @@ class Core {
 	int originX_, originY_;
 
 	float zoom_ = 1.0f;
-	float globalZoom_ = zoom_;
 
 	bool renderCrossHair_;
 
 	// Requested frame rate
 	int fps_;
 	float optimalTime_; // Optimal time between frames
-	float simulationSpeed_ = 100000.0f; // 1 is real time, higher values makes simulation go faster than reality
+	float simulationSpeed_ = 100000000.0f; // 1 is real time, higher values makes simulation go faster than reality
 
 	// FPS
 	unsigned int lastUpdated_ = 0;

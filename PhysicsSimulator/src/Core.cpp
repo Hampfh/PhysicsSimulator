@@ -131,20 +131,24 @@ void Core::OnEvent(SDL_Event* event) {
 				textColor.b = 20;
 				textColor.a = 255;
 
+				std::cout << "OBJECT x:" << selectedObject_->GetX() << " y:" << selectedObject_->GetY() << std::endl;
+
 				// Create text elements
 				for (int i = 0; i < package.package_size; i++) {
-					const auto currentSetting = package.settings[i];
-					const auto currentObject = textDisplay_->CreateTextObject(
+					auto currentSetting = package.settings[i];
+					const auto settingObject = textDisplay_->CreateTextObject(
 						currentSetting.settingTextBox, 
-						currentSetting.text, 
-						currentSetting.fontPath, 
+						&currentSetting.text, 
+						&currentSetting.fontPath, 
 						currentSetting.fontSize,
 						textColor
 					);
+					std::cout << "Created object" << std::endl;
 					if (i == 0) {
-						tempSettingStorageFirst_ = currentObject;
+						tempSettingStorageFirst_ = settingObject;
 					} else if (i + 1 == package.package_size) {
-						tempSettingStorageLast_ = currentObject;
+						std::cout << "ASSIGNED LAST" << std::endl;
+						tempSettingStorageLast_ = settingObject;
 					}
 				}
 			}
@@ -157,7 +161,7 @@ void Core::OnEvent(SDL_Event* event) {
 				// Add force in the direction
 				Vector2* pos1 = selectedObject_->GetLocation();
 
-				Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
+				const Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 
 				ApplyIndividualForce(selectedObject_, pos2, 0.1);
 			}
@@ -175,13 +179,11 @@ void Core::OnEvent(SDL_Event* event) {
 			originX_ = mouseX_;
 			originY_ = mouseY_;
 			zoom_ *= 0.9f;
-			globalZoom_ = globalZoom_ * zoom_;
 		} else if (event->wheel.y > 0 ) {
 			// zoom out
 			originX_ = mouseX_;
 			originY_ = mouseY_;
 			zoom_ *= 1.1f;
-			globalZoom_ = globalZoom_ * zoom_;
 		}
 		break;
 	case SDL_KEYDOWN:
@@ -227,7 +229,7 @@ void Core::OnLoop() {
 	if (!pause_) {
 		pe_->UpdatePhysics(universe_->GetFirst(), optimalTime_, simulationSpeed_);
 		// Action two can't exist in non paused
-		if (selectedObjectAction_ == 2) selectedObjectAction_ = 0;
+		//if (selectedObjectAction_ == 2) selectedObjectAction_ = 0;
 	}
 	else {
 		// When pause draw pause logo

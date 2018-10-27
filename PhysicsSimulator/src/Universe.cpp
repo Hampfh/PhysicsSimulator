@@ -26,6 +26,12 @@ TextPackage PhysicsObject::PrepareObjectSettings() {
 
 	TextString setting;
 
+	// Set settingsBox properties
+	package.settingsBox->x = location_.x;
+	package.settingsBox->y = location_.y;
+	package.settingsBox->w = 200;
+	package.settingsBox->h = setting_count * settingFontSize + 30;
+
 	// Create ID
 	setting.settingTextBox.x = settingsBox_.x + 10;
 	setting.settingTextBox.y = settingsBox_.y + settingNum * settingFontSize;
@@ -63,11 +69,6 @@ TextPackage PhysicsObject::PrepareObjectSettings() {
 	
 	// Insert setting into package
 	package.settings[settingNum - 1] = setting;
-
-	settingsBox_.x = this->GetX();
-	settingsBox_.y = this->GetY();
-	settingsBox_.w = 200;
-	settingsBox_.h = settingNum * settingFontSize + 30;
 
 	return package;
 }

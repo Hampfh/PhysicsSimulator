@@ -10,7 +10,7 @@ FontDisplay::~FontDisplay() {
 	TTF_Quit();
 }
 
-TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string message, std::string font_path, const int font_size, SDL_Color fg) {
+TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string* message, std::string* font_path, const int font_size, SDL_Color fg) {
 
 	// Add textObject to list
 	if (first_ == nullptr) {
@@ -21,13 +21,13 @@ TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string m
 		last_ = last_->next;
 	}
 
-	TTF_Font* font = TTF_OpenFont(font_path.c_str(), font_size);
+	TTF_Font* font = TTF_OpenFont(font_path->c_str(), font_size);
 	// Test if font was successfully imported 
 	if (!font) {
 		std::cout << "Failed to load font" << std::endl;
 		return nullptr;
 	}
-	SDL_Surface* surface = TTF_RenderText_Solid(font, message.c_str(), fg);
+	SDL_Surface* surface = TTF_RenderText_Solid(font, message->c_str(), fg);
 	if (!surface) {
 		std::cout << "Failed to create text surface" << std::endl;
 		return nullptr;
@@ -44,6 +44,7 @@ TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string m
 	last_->textRect = new SDL_Rect();
 	last_->textRect->x = box.x;
 	last_->textRect->y = box.y;
+	std::cout << "X: " << last_->textRect->x << " Y: " << last_->textRect->y << std::endl;
 	last_->textRect->w = box.w;
 	last_->textRect->h = box.h;
 
@@ -60,6 +61,7 @@ void FontDisplay::DisplayText() const {
 	auto current = first_;
 	while (current != nullptr) {
 		SDL_RenderCopy(Core::renderer_, current->textTexture, nullptr, current->textRect);
+		std::cout << "DISPLAYED OBJECT" << std::endl;
 		current = current->next;
 	}
 }
@@ -72,12 +74,11 @@ void FontDisplay::DisplayText(TextElementList* text_object) const {
 
 // Display all text object from first to last
 void FontDisplay::DisplayText(TextElementList* first, TextElementList* last) const {
-
 	// Render all objects
 	auto current = first;
 
 	while (current != nullptr) {
-		SDL_RenderCopy(Core::renderer_, current->textTexture, nullptr, current->textRect);	
+		SDL_RenderCopy(Core::renderer_, current->textTexture, nullptr, current->textRect);
 		if (current == last) {
 			break;
 		}
@@ -115,7 +116,7 @@ void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* las
 	auto inFront = first_;
 	auto current = first_;
 	TextElementList* beforeFirst = nullptr;
-	bool foundFirst = false;
+	auto foundFirst = false;
 	while (current != nullptr) {
 		inFront = current->next;
 		if (current->next == first) {
@@ -130,8 +131,10 @@ void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* las
 
 		if (foundFirst) {
 			delete current;
+			std::cout << "DELETED" << std::endl;
 		}
 		if (foundFirst && current == last) {
+			std::cout << "DELETED" << std::endl;
 			delete current;
 			// Link together the nodes before and after the first and last object
 			if (inFront != nullptr && beforeFirst != nullptr) {
@@ -141,7 +144,6 @@ void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* las
 				last_ = beforeFirst;
 			}
 			last_->next = nullptr;
-			foundFirst = false;
 			break;
 		}
 		current = inFront;

@@ -16,7 +16,7 @@ class FontDisplay {
 public:
 	FontDisplay();
 	~FontDisplay();
-	TextElementList* CreateTextObject(SDL_Rect box, std::string message, std::string font_path, int font_size, SDL_Color fg);
+	TextElementList* CreateTextObject(SDL_Rect box, std::string* message, std::string* font_path, int font_size, SDL_Color fg);
 	void DisplayText() const;
 	void DisplayText(TextElementList* text_object) const;
 	void DisplayText(TextElementList* first, TextElementList* last) const;
