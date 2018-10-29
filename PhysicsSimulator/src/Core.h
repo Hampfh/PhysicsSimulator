@@ -4,6 +4,7 @@
 #include "includes/Vector.h"
 #include "Universe.h"
 #include "TTF_FontDisplay.h"
+#include "CommandInterpretor.h"
 #include <iostream>
 #include <locale> // std::isdigit
 #include <vector>
@@ -74,12 +75,9 @@ public:
 	void OnCleanUp() const;
 
 	void ChangeState(States new_state);
-	void CheckConsole(Universe* universe) const;
-	void ConsoleInterpretation(std::string* command, Universe* universe) const;
 	static void DrawPauseLogo(int x, int y, SDL_Color color);
 	void DrawSettingPackage() const;
 	void EndState();
-	static bool IsNumber(const std::string& s);
 	void StabilizeFPS();
 	void UpdateGraphics() const;
 

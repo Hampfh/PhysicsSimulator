@@ -150,6 +150,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\CommandInterpretor.cpp" />
     <ClCompile Include="src\includes\Vector.cpp" />
     <ClCompile Include="src\PhysicsEngine.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -158,6 +159,7 @@
     <ClCompile Include="src\Universe.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\CommandInterpretor.h" />
     <ClInclude Include="src\includes\Vector.h" />
     <ClInclude Include="src\PhysicsEngine.h" />
     <ClInclude Include="src\Core.h" />
