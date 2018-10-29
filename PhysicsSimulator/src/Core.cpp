@@ -42,6 +42,9 @@ bool Core::OnInit() {
 
 	renderer_ = SDL_CreateRenderer(window_, -1, SDL_RENDERER_ACCELERATED);
 
+	// Enables blends and transparent objects
+	SDL_SetRenderDrawBlendMode(renderer_, SDL_BLENDMODE_BLEND);
+
 	pe_ = new PhysicsEngine;
 
 	universe_ = new Universe(&originX_, &originY_, &zoom_);
@@ -73,27 +76,18 @@ void Core::OnEvent(SDL_Event* event) {
 		// Left button clicked
 		if (event->button.button == SDL_BUTTON_LEFT) {
 			// If user selects the same object twice then unselect
-			if (hoverObject_ == selectedObject_ && hoverObject_ != nullptr && selectedObjectAction_ == 1) {
-				// Unselect the selectedObject
-				selectedObject_ = nullptr;
-				selectedObjectAction_ = 0;
+			if (hoverObject_ == selectedObject_ && hoverObject_ != nullptr && simulatorState_ == 1) {
+				EndState();
 			}
 			// An object was clicked
 			else if (hoverObject_ != nullptr) {
-				selectedObject_ = hoverObject_;
-				selectedObjectAction_ = 1;
+				ChangeState(MOVEMENT);
 			}
 		}
 		// Right button clicked
 		else if (event->button.button == SDL_BUTTON_RIGHT) {
-			if (hoverObject_ == selectedObject_ && hoverObject_ != nullptr && selectedObjectAction_ == 2) {
-				// Unselect the selectedObject
-				selectedObject_ = nullptr;
-				selectedObjectAction_ = 0;
-				pause_ = false;
-
-				textDisplay_->DeleteTextObjects(tempSettingStorageFirst_, tempSettingStorageLast_);
-				std::cout << "Removed text textures" << std::endl;
+			if (hoverObject_ == selectedObject_ && hoverObject_ != nullptr && simulatorState_ == SHOW_PROPERTIES) {
+				EndState();
 			}
 			// Summon a sphere if user didn't click an object
 			else if (hoverObject_ == nullptr) {
@@ -117,45 +111,12 @@ void Core::OnEvent(SDL_Event* event) {
 			}
 			else {
 				// Assign object to setting view
-				selectedObject_ = hoverObject_;
-				selectedObjectAction_ = 2;
-				pause_ = true;
-
-				const auto package = selectedObject_->PrepareObjectSettings();
-
-				std::cout << "ADDED text textures" << std::endl;
-
-				SDL_Color textColor;
-				textColor.r = 20;
-				textColor.g = 20;
-				textColor.b = 20;
-				textColor.a = 255;
-
-				std::cout << "OBJECT x:" << selectedObject_->GetX() << " y:" << selectedObject_->GetY() << std::endl;
-
-				// Create text elements
-				for (int i = 0; i < package.package_size; i++) {
-					auto currentSetting = package.settings[i];
-					const auto settingObject = textDisplay_->CreateTextObject(
-						currentSetting.settingTextBox, 
-						&currentSetting.text, 
-						&currentSetting.fontPath, 
-						currentSetting.fontSize,
-						textColor
-					);
-					std::cout << "Created object" << std::endl;
-					if (i == 0) {
-						tempSettingStorageFirst_ = settingObject;
-					} else if (i + 1 == package.package_size) {
-						std::cout << "ASSIGNED LAST" << std::endl;
-						tempSettingStorageLast_ = settingObject;
-					}
-				}
+				ChangeState(SHOW_PROPERTIES);
 			}
 		}
 		break;
 	case SDL_MOUSEBUTTONUP:
-		if (hoverObject_ == nullptr && selectedObjectAction_ == 1) {
+		if (hoverObject_ == nullptr && simulatorState_ == MOVEMENT) {
 			// If selectedObject has selection then mark position
 			if (selectedObject_ != nullptr) {
 				// Add force in the direction
@@ -167,10 +128,8 @@ void Core::OnEvent(SDL_Event* event) {
 			}
 		} 
 		
-		if (selectedObjectAction_ == 1) {
-			// Unselect the selectedObject
-			selectedObject_ = nullptr;
-			selectedObjectAction_ = 0;
+		if (simulatorState_ == MOVEMENT) {
+			EndState();
 		}
 		break;
 	case SDL_MOUSEWHEEL:
@@ -192,11 +151,10 @@ void Core::OnEvent(SDL_Event* event) {
 			if (pause_) pause_ = false;
 			else pause_ = true;
 			break;
-			// Unselect all objects if escape or backspace is clicked
+		// Unselect all objects if escape or backspace is clicked
 		case SDLK_ESCAPE:
 		case SDLK_BACKSPACE:
-			selectedObject_ = nullptr;
-			selectedObjectAction_ = 0;
+			EndState();
 			pause_ = false;
 			break;
 		case SDLK_h:
@@ -225,7 +183,6 @@ void Core::OnEvent(SDL_Event* event) {
 }
 
 void Core::OnLoop() {
-	//std::cout << "Zoom: " << zoom_ << " GlobalZoom: " << globalZoom_ << std::endl;
 	if (!pause_) {
 		pe_->UpdatePhysics(universe_->GetFirst(), optimalTime_, simulationSpeed_);
 		// Action two can't exist in non paused
@@ -246,10 +203,13 @@ void Core::OnLoop() {
 }
 
 void Core::OnRender() {
+	// Display everything on screen
 	SDL_RenderPresent(renderer_);
 
+	// Set draw color
 	SDL_SetRenderDrawColor(renderer_, 255, 255, 255, SDL_ALPHA_OPAQUE);
 
+	// Render background for next frame
 	SDL_RenderClear(renderer_);
 }
 
@@ -261,7 +221,61 @@ void Core::OnCleanUp() const {
 	delete pe_;
 	delete universe_;
 	delete textDisplay_;
+
 }
+
+void Core::ChangeState(const States new_state) {
+	EndState();
+
+	TextPackage package;
+
+	switch(new_state) {
+		case MOVEMENT: // Begin object movement state
+			std::cout << "Started MOVEMENT state" << std::endl;
+			selectedObject_ = hoverObject_;
+		break;
+		case SHOW_PROPERTIES: // Begin display object properites
+			std::cout << "Started PROPERTIES state" << std::endl;
+			selectedObject_ = hoverObject_;
+
+			package = selectedObject_->PrepareObjectSettings();
+
+			std::cout << "ADDED text textures" << std::endl;
+
+			SDL_Color textColor;
+			textColor.r = 20;
+			textColor.g = 20;
+			textColor.b = 20;
+			textColor.a = 255;
+
+			// Create text elements
+			for (int i = 0; i < package.package_size; i++) {
+				auto currentSetting = package.settings[i];
+				std::cout << currentSetting.settingTextBox.x << std::endl;
+				const auto settingObject = textDisplay_->CreateTextObject(
+					currentSetting.settingTextBox, 
+					&currentSetting.text, 
+					&currentSetting.fontPath, 
+					currentSetting.fontSize,
+					textColor
+				);
+				std::cout << "Created object" << std::endl;
+				if (i == 0) {
+					tempSettingStorageFirst_ = settingObject;
+					tempSettingStorageFirst_->mainRect = *package.settingsBox;
+					std::cout << "FIRST OBJECT: " << tempSettingStorageFirst_->textRect.x << std::endl;
+				} else if (i + 1 == package.package_size) {
+					tempSettingStorageLast_ = settingObject;
+				}
+			}
+		break;
+		default:
+
+		break;
+	}
+	simulatorState_ = new_state;
+}
+
 
 void Core::CheckConsole(Universe* universe) const {
 	while (true) {
@@ -347,14 +361,43 @@ void Core::DrawPauseLogo(const int x, const int y, const SDL_Color color) {
 	SDL_RenderFillRect(renderer_, &rect);
 }
 
-void Core::DrawSettingPackage(TextPackage* package) const {
-	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, SDL_ALPHA_OPAQUE);
-	Vector2 position(package->settingsBox->x, package->settingsBox->y);
-	ConvertCoordinates(&position, originX_, originY_, zoom_);
-	package->settingsBox->x = position.x;
-	package->settingsBox->y = position.y;
-	SDL_RenderFillRect(renderer_, package->settingsBox);
-	textDisplay_->DisplayText(tempSettingStorageFirst_, tempSettingStorageLast_);
+void Core::DrawSettingPackage() const {
+
+	SDL_Rect newRect;
+	newRect.x = selectedObject_->GetX();
+	newRect.y = selectedObject_->GetY();
+	newRect.w = tempSettingStorageFirst_->mainRect.w;
+	newRect.h = tempSettingStorageFirst_->mainRect.h;
+
+	// Convert position
+	ConvertCoordinate(&newRect.x, originX_, zoom_);
+	ConvertCoordinate(&newRect.y, originX_, zoom_);
+
+	// Draw settings background
+	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, 225);
+	SDL_RenderFillRect(renderer_, &newRect);
+
+	FontDisplay::DisplayText(tempSettingStorageFirst_, tempSettingStorageLast_, &newRect);
+}
+
+void Core::EndState() {
+	switch (simulatorState_) {
+		case 1: // End selection state
+			std::cout << "ENDED MOVEMENT state" << std::endl;
+			selectedObject_ = nullptr;
+		break;
+		case 2: // End view properties state
+			std::cout << "ENDED PROPERTIES state" << std::endl;
+			selectedObject_ = nullptr;
+			//pause_ = false;
+
+			textDisplay_->DeleteTextObjects(tempSettingStorageFirst_, tempSettingStorageLast_);
+			std::cout << "Removed text textures" << std::endl;
+		break;
+		default:
+		break;
+	}
+	simulatorState_ = DEFAULT;
 }
 
 bool Core::IsNumber(const std::string& s) {
@@ -362,17 +405,17 @@ bool Core::IsNumber(const std::string& s) {
 	return (!(s.empty()) && isdigit(s[0]));
 }
 
-void Core::DrawCircle(Vector2 location, int radius, SDL_Color* color, int cross_hair) const {
+void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const int cross_hair) const {
 
-	radius = static_cast<int>(static_cast<float>(radius) * zoom_);
+	radius = radius * zoom_;
 
 	ConvertCoordinates(&location, originX_, originY_, zoom_);
 
 	if (cross_hair) {
 		// Render a x on the planet position
-		SDL_SetRenderDrawColor(Core::renderer_, 20, 20, 20, 255);
-		SDL_RenderDrawLine(Core::renderer_, location.x - 10, location.y, location.x + 10, location.y);
-		SDL_RenderDrawLine(Core::renderer_, location.x, location.y + 10, location.x, location.y - 10);	
+		SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
+		SDL_RenderDrawLine(renderer_, location.x - 10, location.y, location.x + 10, location.y);
+		SDL_RenderDrawLine(renderer_, location.x, location.y + 10, location.x, location.y - 10);	
 	}
 
 	for (auto dy = 1; dy <= radius; dy++) {
@@ -414,7 +457,7 @@ void Core::UpdateGraphics() const {
 	}
 
 	// Draw line between selected object and mouse
-	if (selectedObject_ != nullptr && selectedObjectAction_ == 1) {
+	if (selectedObject_ != nullptr && simulatorState_ == MOVEMENT) {
 		Vector2 currentPos = *selectedObject_->GetLocation();
 
 		ConvertCoordinates(&currentPos, originX_, originY_, zoom_);
@@ -423,9 +466,8 @@ void Core::UpdateGraphics() const {
 		                   static_cast<int>(currentPos.y), mouseX_, mouseY_);
 	}
 	// Display settings box
-	else if (selectedObject_ != nullptr && selectedObjectAction_ == 2) {
-		TextPackage package = selectedObject_->PrepareObjectSettings();
-		DrawSettingPackage(&package);
+	else if (selectedObject_ != nullptr && simulatorState_ == SHOW_PROPERTIES) {
+		DrawSettingPackage();
 	}
 }
 
@@ -436,8 +478,10 @@ void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_
 	TransposePosition(position, -origin_x, -origin_y);
 }
 
-void InvertYAxis(Vector2* position, const int screen_height) {
-	position->y = screen_height - position->y;
+void ConvertCoordinate(int* coordinate, const int origin, const float zoom) {
+	TransposeCoordinate(coordinate, origin);
+	ZoomCoordinate(coordinate, zoom);
+	TransposeCoordinate(coordinate, -origin);
 }
 
 void TransposePosition(Vector2* position, const int origin_x, const int origin_y) {
@@ -446,10 +490,18 @@ void TransposePosition(Vector2* position, const int origin_x, const int origin_y
 	position->y = position->y - origin_y;
 }
 
+void TransposeCoordinate(int* coordinate, const int origin) {
+	*coordinate = *coordinate - origin;
+}
+
 void ZoomPosition(Vector2* position, const float zoom) {
 
 	position->x = position->x * zoom;
 	position->y = position->y * zoom;
+}
+
+void ZoomCoordinate(int* coordinate, const float zoom) {
+	*coordinate = *coordinate * zoom;
 }
 
 void RenderLine(SDL_Renderer* renderer, const int x1, const int y1, const int x2, const int y2, const float zoom, const int origin_x, const int origin_y) {

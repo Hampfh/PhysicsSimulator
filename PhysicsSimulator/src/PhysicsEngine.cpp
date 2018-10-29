@@ -36,18 +36,12 @@ void ApplyIndividualForce(PhysicsObject* object, Vector2 target_position, const 
 	F = G --------
 		    r^2
 	*/
-	//const float forceStrength = static_cast<float>(6.672f * pow(10, -11)) * (static_cast<float>(object->GetMass() * static_cast<float>(object->GetMass() * amplified_force)) / pow(DistanceDifference(pos1, &target_position), 2));
 	const double forceStrength = CalculateForceBetweenObjects(object->GetLocation(), &target_position, object->GetMass(), object->GetMass() * DistanceDifference(pos1, &target_position) * amplified_force);
 	dir = dir.SetMag(static_cast<float>(forceStrength / object->GetMass()));
 
 	object->ApplyForce(dir);
 
 	std::cout << DistanceDifference(pos1, &target_position) << std::endl;
-}
-
-Vector2 SDLPointToVec2(SDL_Point* point) {
-	// Braced initialization
-	return Vector2{static_cast<float>(point->x), static_cast<float>(point->y)};
 }
 
 ////////////////////////////////////////////////// PhysicsEngine //////////////////////////////////////////////////////////////

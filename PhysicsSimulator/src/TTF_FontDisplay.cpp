@@ -7,19 +7,26 @@ FontDisplay::FontDisplay() {
 }
 
 FontDisplay::~FontDisplay() {
+	DeleteAll();
 	TTF_Quit();
 }
 
-TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string* message, std::string* font_path, const int font_size, SDL_Color fg) {
-
+TextElementList* FontDisplay::AddToQueue() {
 	// Add textObject to list
 	if (first_ == nullptr) {
 		first_ = new TextElementList;
 		last_ = first_;
 	} else {
 		last_->next = new TextElementList;
+		last_->next->prev = last_; // Connect prev 
 		last_ = last_->next;
 	}
+	return last_;
+}
+
+TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string* message, std::string* font_path, const int font_size, SDL_Color fg) {
+
+	AddToQueue();
 
 	TTF_Font* font = TTF_OpenFont(font_path->c_str(), font_size);
 	// Test if font was successfully imported 
@@ -41,14 +48,13 @@ TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string* 
 	SDL_FreeSurface(surface);
 	TTF_CloseFont(font);
 
-	last_->textRect = new SDL_Rect();
-	last_->textRect->x = box.x;
-	last_->textRect->y = box.y;
-	std::cout << "X: " << last_->textRect->x << " Y: " << last_->textRect->y << std::endl;
-	last_->textRect->w = box.w;
-	last_->textRect->h = box.h;
+	last_->textRect.x = box.x;
+	last_->textRect.y = box.y;
+	std::cout << "X: " << last_->textRect.x << " Y: " << last_->textRect.y << std::endl;
+	last_->textRect.w = box.w;
+	last_->textRect.h = box.h;
 
-	if (SDL_QueryTexture(last_->textTexture, nullptr, nullptr, &last_->textRect->w, &last_->textRect->h) != 0) {
+	if (SDL_QueryTexture(last_->textTexture, nullptr, nullptr, &last_->textRect.w, &last_->textRect.h) != 0) {
 		std::cout << "QueryTexture not loading" << std::endl;
 		return nullptr;
 	}
@@ -60,7 +66,7 @@ void FontDisplay::DisplayText() const {
 	// Render all objects
 	auto current = first_;
 	while (current != nullptr) {
-		SDL_RenderCopy(Core::renderer_, current->textTexture, nullptr, current->textRect);
+		SDL_RenderCopy(Core::renderer_, current->textTexture, nullptr, &current->textRect);
 		std::cout << "DISPLAYED OBJECT" << std::endl;
 		current = current->next;
 	}
@@ -69,19 +75,39 @@ void FontDisplay::DisplayText() const {
 // Display the selected text object
 void FontDisplay::DisplayText(TextElementList* text_object) const {
 	// Copy out text to screen
-	SDL_RenderCopy(Core::renderer_, last_->textTexture, nullptr, last_->textRect);
+	SDL_RenderCopy(Core::renderer_, last_->textTexture, nullptr, &last_->textRect);
 }
 
 // Display all text object from first to last
-void FontDisplay::DisplayText(TextElementList* first, TextElementList* last) const {
+void FontDisplay::DisplayText(TextElementList* first, TextElementList* last, SDL_Rect* main_container) {
 	// Render all objects
 	auto current = first;
 
+	// Calculate difference in movement
+	const int deltaX = main_container->x - first->mainRect.x;
+	const int deltaY = main_container->y - first->mainRect.y;
+
+	// Update old box coordinates
+	first->mainRect = *main_container;
+
 	while (current != nullptr) {
-		SDL_RenderCopy(Core::renderer_, current->textTexture, nullptr, current->textRect);
-		if (current == last) {
-			break;
-		}
+		// Update text properties
+		current->textRect.x += deltaX;
+		current->textRect.y += deltaY;
+
+		SDL_RenderCopy(Core::renderer_, current->textTexture, nullptr, &current->textRect);
+		if (current == last) { break; }
+		current = current->next;
+	}
+}
+
+void FontDisplay::DeleteAll() const {
+	auto current = first_;
+	auto prev = first_->prev;
+
+	while (current != nullptr) {
+		delete prev;
+		prev = current;
 		current = current->next;
 	}
 }
@@ -102,7 +128,6 @@ void FontDisplay::DeleteTextObject(TextElementList* text_object) {
 				prev->next = current->next;
 			}
 			// Delete current
-			delete current->textRect;
 			delete current;
 		}
 
@@ -112,42 +137,32 @@ void FontDisplay::DeleteTextObject(TextElementList* text_object) {
 }
 
 // Deletes all objects between first and last
-void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* last) {
-	auto inFront = first_;
-	auto current = first_;
-	TextElementList* beforeFirst = nullptr;
-	auto foundFirst = false;
-	while (current != nullptr) {
-		inFront = current->next;
-		if (current->next == first) {
-			beforeFirst = current;
-		} else if (current == first && current == first_) {
-			beforeFirst = nullptr;
-		}
+void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* last) const {
+	auto current = first;
+	auto prev = first;
+	TextElementList* link = current->prev;
 
-		if (current == first) {
-			foundFirst = true;
-		}
+	while (current == nullptr) {
+		
+		delete prev;
 
-		if (foundFirst) {
-			delete current;
-			std::cout << "DELETED" << std::endl;
-		}
-		if (foundFirst && current == last) {
-			std::cout << "DELETED" << std::endl;
-			delete current;
-			// Link together the nodes before and after the first and last object
-			if (inFront != nullptr && beforeFirst != nullptr) {
-				beforeFirst->next = inFront;
-				last_ = inFront;				
-			} else if (inFront == nullptr && beforeFirst != nullptr) {
-				last_ = beforeFirst;
+		if (current == last) {
+			// There are nodes before and after
+			if (link != nullptr && last != last_) {
+				link->next = last->next;
+				last->next->prev = link;
+			} // Only nodes before
+			else if (link != nullptr && last == last_) {
+				link->next = nullptr;
+			} // Only nodes after 
+			else if (link == nullptr && last != last_) {
+				last->next = first_;
 			}
-			last_->next = nullptr;
+			delete current;
 			break;
 		}
-		current = inFront;
+
+		prev = current;
+		current = current->next;
 	}
-	first = nullptr;
-	last = nullptr;
 }

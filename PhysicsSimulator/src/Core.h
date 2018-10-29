@@ -14,6 +14,13 @@
 struct TextPackage;
 class Universe;
 
+// State definition
+enum States {
+	DEFAULT,
+	MOVEMENT,
+	SHOW_PROPERTIES
+};
+
 class Core {
 	friend class PhysicsEngine;
 	friend class PhysicsObject;
@@ -37,7 +44,7 @@ class Core {
 	// Requested frame rate
 	int fps_;
 	float optimalTime_; // Optimal time between frames
-	float simulationSpeed_ = 100000000.0f; // 1 is real time, higher values makes simulation go faster than reality
+	float simulationSpeed_ = 1000000.0f; // 1 is real time, higher values makes simulation go faster than reality
 
 	// FPS
 	unsigned int lastUpdated_ = 0;
@@ -52,7 +59,7 @@ class Core {
 
 	PhysicsObject* hoverObject_ = nullptr;
 	PhysicsObject* selectedObject_ = nullptr;
-	int selectedObjectAction_ = 0;
+	States simulatorState_ = DEFAULT;
 
 	static PhysicsEngine* pe_;
 	Universe* universe_ = nullptr;
@@ -66,20 +73,24 @@ public:
 	static void OnRender();
 	void OnCleanUp() const;
 
+	void ChangeState(States new_state);
 	void CheckConsole(Universe* universe) const;
 	void ConsoleInterpretation(std::string* command, Universe* universe) const;
 	static void DrawPauseLogo(int x, int y, SDL_Color color);
-	void DrawSettingPackage(TextPackage* package) const;
+	void DrawSettingPackage() const;
+	void EndState();
 	static bool IsNumber(const std::string& s);
 	void StabilizeFPS();
 	void UpdateGraphics() const;
 
-	void DrawCircle(Vector2 location, int radius, SDL_Color* color, int cross_hair) const;
+	void DrawCircle(Vector2 location, float radius, SDL_Color* color, int cross_hair) const;
 };
 
 void ConvertCoordinates(Vector2* position, int origin_x, int origin_y, float zoom);
-void InvertYAxis(Vector2* position, int screen_height);
+void ConvertCoordinate(int* coordinate, int origin, float zoom);
 void TransposePosition(Vector2* position, int origin_x, int origin_y);
+void TransposeCoordinate(int* coordinate, int origin);
 void ZoomPosition(Vector2* position, float zoom);
+void ZoomCoordinate(int* coordinate, float zoom);
 void RenderLine(SDL_Renderer* renderer, int x1, int y1, int x2, int y2, float zoom, int origin_x, int origin_y);
 
