@@ -77,18 +77,18 @@ void Core::OnEvent(SDL_Event* event) {
 		// Left button clicked
 		if (event->button.button == SDL_BUTTON_LEFT) {
 			// If user selects the same object twice then unselect
-			if (hoverObject_ == selectedObject_ && hoverObject_ != nullptr && simulatorState_ == 1) {
-				EndState();
+			if (hoverObject_ == selectedObject_ && hoverObject_ != nullptr && simulationStates_ & 1) {
+				EndState(MOVEMENT);
 			}
 			// An object was clicked
 			else if (hoverObject_ != nullptr) {
-				ChangeState(MOVEMENT);
+				AddState(MOVEMENT);
 			}
 		}
 		// Right button clicked
 		else if (event->button.button == SDL_BUTTON_RIGHT) {
-			if (hoverObject_ == selectedObject_ && hoverObject_ != nullptr && simulatorState_ == SHOW_PROPERTIES) {
-				EndState();
+			if (hoverObject_ == selectedObject_ && hoverObject_ != nullptr && simulationStates_ & SHOW_PROPERTIES) {
+				EndState(SHOW_PROPERTIES);
 			}
 			// Summon a sphere if user didn't click an object
 			else if (hoverObject_ == nullptr) {
@@ -112,12 +112,12 @@ void Core::OnEvent(SDL_Event* event) {
 			}
 			else {
 				// Assign object to setting view
-				ChangeState(SHOW_PROPERTIES);
+				AddState(SHOW_PROPERTIES);
 			}
 		}
 		break;
 	case SDL_MOUSEBUTTONUP:
-		if (hoverObject_ == nullptr && simulatorState_ == MOVEMENT) {
+		if (hoverObject_ == nullptr && simulationStates_ & MOVEMENT) {
 			// If selectedObject has selection then mark position
 			if (selectedObject_ != nullptr) {
 				// Add force in the direction
@@ -129,8 +129,8 @@ void Core::OnEvent(SDL_Event* event) {
 			}
 		} 
 		
-		if (simulatorState_ == MOVEMENT) {
-			EndState();
+		if (simulationStates_ & MOVEMENT) {
+			EndState(MOVEMENT);
 		}
 		break;
 	case SDL_MOUSEWHEEL:
@@ -155,7 +155,7 @@ void Core::OnEvent(SDL_Event* event) {
 		// Unselect all objects if escape or backspace is clicked
 		case SDLK_ESCAPE:
 		case SDLK_BACKSPACE:
-			EndState();
+			simulationStates_ = 0;
 			pause_ = false;
 			break;
 		case SDLK_h:
@@ -173,6 +173,9 @@ void Core::OnEvent(SDL_Event* event) {
 			break;
 		case SDLK_x:
 			renderCrossHair_ = !renderCrossHair_;
+			break;
+		case SDLK_l:
+			simulationStates_ = (simulationStates_ & LOCK_OBJECT ? simulationStates_ & ~LOCK_OBJECT : simulationStates_ | LOCK_OBJECT);
 			break;
 		default:
 			break;
@@ -198,6 +201,8 @@ void Core::OnLoop() {
 	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
 	SDL_RenderDrawPoint(renderer_, screenWidth_ / 2, screenHeight_ / 2);
 
+	RunStates();
+
 	UpdateGraphics();
 
 	StabilizeFPS();
@@ -222,12 +227,9 @@ void Core::OnCleanUp() const {
 	delete pe_;
 	delete universe_;
 	delete textDisplay_;
-
 }
 
-void Core::ChangeState(const States new_state) {
-	EndState();
-
+void Core::AddState(const States new_state) {
 	TextPackage package;
 
 	switch(new_state) {
@@ -235,7 +237,7 @@ void Core::ChangeState(const States new_state) {
 			std::cout << "Started MOVEMENT state" << std::endl;
 			selectedObject_ = hoverObject_;
 		break;
-		case SHOW_PROPERTIES: // Begin display object properites
+		case SHOW_PROPERTIES: // Begin display object properties
 			std::cout << "Started PROPERTIES state" << std::endl;
 			selectedObject_ = hoverObject_;
 
@@ -274,7 +276,45 @@ void Core::ChangeState(const States new_state) {
 
 		break;
 	}
-	simulatorState_ = new_state;
+	// Add state
+	simulationStates_ = simulationStates_ & new_state;
+}
+
+void Core::RunStates() const {
+	if (simulationStates_ & MOVEMENT) {
+		Vector2 currentPos = *selectedObject_->GetLocation();
+
+		ConvertCoordinates(&currentPos, originX_, originY_, zoom_);
+
+		SDL_RenderDrawLine(renderer_, static_cast<int>(currentPos.x),
+		                   static_cast<int>(currentPos.y), mouseX_, mouseY_);
+	}
+	if (simulationStates_ & SHOW_PROPERTIES) {
+		DrawSettingPackage();
+	}
+	if (simulationStates_ & LOCK_OBJECT) {
+		
+	}
+}
+
+void Core::EndState(const States end_state) {
+	switch (simulationStates_) {
+		case 1: // End selection state
+			std::cout << "ENDED MOVEMENT state" << std::endl;
+			selectedObject_ = nullptr;
+		break;
+		case 2: // End view properties state
+			std::cout << "ENDED PROPERTIES state" << std::endl;
+			selectedObject_ = nullptr;
+			//pause_ = false;
+
+			textDisplay_->DeleteTextObjects(tempSettingStorageFirst_, tempSettingStorageLast_);
+			std::cout << "Removed text textures" << std::endl;
+		break;
+		default:
+		break;
+	}
+	simulationStates_ = simulationStates_ & ~end_state;
 }
 
 void Core::DrawPauseLogo(const int x, const int y, const SDL_Color color) {
@@ -310,28 +350,6 @@ void Core::DrawSettingPackage() const {
 
 	FontDisplay::DisplayText(tempSettingStorageFirst_, tempSettingStorageLast_, &newRect);
 }
-
-void Core::EndState() {
-	switch (simulatorState_) {
-		case 1: // End selection state
-			std::cout << "ENDED MOVEMENT state" << std::endl;
-			selectedObject_ = nullptr;
-		break;
-		case 2: // End view properties state
-			std::cout << "ENDED PROPERTIES state" << std::endl;
-			selectedObject_ = nullptr;
-			//pause_ = false;
-
-			textDisplay_->DeleteTextObjects(tempSettingStorageFirst_, tempSettingStorageLast_);
-			std::cout << "Removed text textures" << std::endl;
-		break;
-		default:
-		break;
-	}
-	simulatorState_ = DEFAULT;
-}
-
-
 
 void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const int cross_hair) const {
 
@@ -383,7 +401,7 @@ void Core::UpdateGraphics() const {
 		current->ResetColor();
 		current = current->next;
 	}
-
+	/*
 	// Draw line between selected object and mouse
 	if (selectedObject_ != nullptr && simulatorState_ == MOVEMENT) {
 		Vector2 currentPos = *selectedObject_->GetLocation();
@@ -396,7 +414,7 @@ void Core::UpdateGraphics() const {
 	// Display settings box
 	else if (selectedObject_ != nullptr && simulatorState_ == SHOW_PROPERTIES) {
 		DrawSettingPackage();
-	}
+	}*/
 }
 
 void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_y, const float zoom) {

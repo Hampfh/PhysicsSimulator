@@ -17,9 +17,10 @@ class Universe;
 
 // State definition
 enum States {
-	DEFAULT,
-	MOVEMENT,
-	SHOW_PROPERTIES
+	NONE			= 0,
+	MOVEMENT		= 1,
+	SHOW_PROPERTIES = 2,
+	LOCK_OBJECT		= 4
 };
 
 class Core {
@@ -60,7 +61,7 @@ class Core {
 
 	PhysicsObject* hoverObject_ = nullptr;
 	PhysicsObject* selectedObject_ = nullptr;
-	States simulatorState_ = DEFAULT;
+	unsigned int simulationStates_ = 0;
 
 	static PhysicsEngine* pe_;
 	Universe* universe_ = nullptr;
@@ -74,10 +75,11 @@ public:
 	static void OnRender();
 	void OnCleanUp() const;
 
-	void ChangeState(States new_state);
+	void AddState(States new_state);
+	void RunStates() const;
+	void EndState(States end_state);
 	static void DrawPauseLogo(int x, int y, SDL_Color color);
 	void DrawSettingPackage() const;
-	void EndState();
 	void StabilizeFPS();
 	void UpdateGraphics() const;
 

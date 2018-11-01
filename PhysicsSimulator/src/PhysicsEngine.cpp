@@ -46,7 +46,7 @@ void ApplyIndividualForce(PhysicsObject* object, Vector2 target_position, const 
 
 ////////////////////////////////////////////////// PhysicsEngine //////////////////////////////////////////////////////////////
 
-int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* second, Universe* universe) {
+int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* second, Universe* universe) const {
 	std::cout << "X: " << first->GetX() << std::endl;
 	std::cout << "SX: " << second->GetX() << std::endl;
 	const double distance = DistanceDifference(first, second);
@@ -77,15 +77,15 @@ int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* seco
 		color.b = 20;
 		color.a = 255;
 
+		// Create new object
 		PhysicsObject* object = universe->SummonObject(&newPos, newRadius, newMass, &color);
 
 		// Calculate work
-		// W = 1/2 * m * v2
+		// KE = 1/2 * m * v2
 		// Calc first object's work
 		const Vector2 firstWork(
 			pow(first->GetVelocity()->x, 2) * static_cast<double>(1)/static_cast<double>(2) * first->GetMass(),
 			pow(first->GetVelocity()->y, 2) * static_cast<double>(1)/static_cast<double>(2) * first->GetMass()
-
 		); 
 		// Calc second object's work
 		const Vector2 secondWork(
@@ -100,16 +100,14 @@ int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* seco
 		//const auto secondWork = *second->GetVelocity() * second->GetVelocity()->SetMag(static_cast<double>(1)/2 * second->GetMass());
 
 		// Add together kinetic energy
-		auto newWork = firstWork + secondWork;
+		const Vector2 newWork = firstWork + secondWork;
 
 		std::cout << "First Work: " << firstWork << std::endl;
-		
 		std::cout << "Second Work: " << secondWork << std::endl;
-	
 		std::cout << "Work: " << newWork << std::endl;
 
 		// Calc velocity from work 
-		// (2W / m))**(1/2) = v
+		// (2KE / m))**(1/2) = v
 		Vector2 newVelocity;
 		newVelocity.x = std::sqrt(2 * newWork.x / newMass);
 		newVelocity.y = std::sqrt(2 * newWork.y / newMass);
@@ -134,7 +132,7 @@ int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* seco
 		std::cout << "Velocity: " << newVelocity << std::endl;
 
 		// Apply new velocity
-		object->SetVelocity(newVelocity);
+		//object->SetVelocity(newVelocity);
 
 		// Delete old objects
 		universe->Delete(first);
@@ -145,8 +143,7 @@ int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* seco
 	return 0; // No changes
 }
 
-
-void PhysicsEngine::UpdatePhysics(Universe* universe, const float delta_time, const float simulation_speed) {
+void PhysicsEngine::UpdatePhysics(Universe* universe, const float delta_time, const float simulation_speed) const {
 	// Temporary variables
 	PhysicsObject* current = universe->GetFirst();
 	PhysicsObject* currentMatcher = universe->GetFirst();

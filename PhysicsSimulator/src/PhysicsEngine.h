@@ -15,6 +15,6 @@ void ApplyIndividualForce(PhysicsObject* object, Vector2 target_position, float 
 
 class PhysicsEngine {	
 public:
-	void UpdatePhysics(Universe* universe, float delta_time, float simulation_speed);
-	int CollisionManagement(PhysicsObject* first, PhysicsObject* second, Universe* universe);
+	int CollisionManagement(PhysicsObject* first, PhysicsObject* second, Universe* universe) const;
+	void UpdatePhysics(Universe* universe, float delta_time, float simulation_speed) const;
 };
