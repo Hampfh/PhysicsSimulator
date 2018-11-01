@@ -132,6 +132,31 @@ void Universe::ClearUniverse() {
 	lastObject_ = nullptr;
 }
 
+void Universe::Delete(PhysicsObject* object) {
+	auto current = firstObject_;
+	auto prev = firstObject_;
+	while (current != nullptr) {
+		if (current == object) {
+			if (firstObject_ == lastObject_) {
+				firstObject_ = nullptr;
+				lastObject_ = nullptr;
+			}
+			else if (current == firstObject_) {
+				firstObject_ = firstObject_->next;
+			} else if (current == lastObject_){
+				lastObject_ = prev;
+			} else {
+				prev->next = current->next;
+			}
+			// Delete current
+			delete current;
+			break;
+		}
+
+		prev = current;
+		current = current->next;
+	}
+}
 
 PhysicsObject* Universe::GetFirst() const {
 	return firstObject_;
@@ -205,7 +230,8 @@ PhysicsObject* Universe::SummonObject(Vector2* position, const double radius, co
 	ZoomPosition(position, 1 / *zoom_);
 	TransposePosition(position, -*originX_, -*originY_);
 
-	auto *newObject = new PhysicsObject{newId, position, radius, mass, color};
+	PhysicsObject* newObject = new PhysicsObject(newId, position, radius, mass, color);
 	InsertObject(newObject);
+	std::cout << "OBJECT CREATED" << std::endl;
 	return newObject;
 }

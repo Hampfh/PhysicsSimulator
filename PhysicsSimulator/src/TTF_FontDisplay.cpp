@@ -102,6 +102,9 @@ void FontDisplay::DisplayText(TextElementList* first, TextElementList* last, SDL
 }
 
 void FontDisplay::DeleteAll() const {
+	if (first_ == nullptr) {
+		return;
+	}
 	auto current = first_;
 	auto prev = first_->prev;
 

@@ -1,4 +1,5 @@
 #include "Core.h"
+#include <windows.h>
 
 SDL_Renderer* Core::renderer_;
 PhysicsEngine* Core::pe_;
@@ -184,7 +185,7 @@ void Core::OnEvent(SDL_Event* event) {
 
 void Core::OnLoop() {
 	if (!pause_) {
-		pe_->UpdatePhysics(universe_->GetFirst(), optimalTime_, simulationSpeed_);
+		pe_->UpdatePhysics(universe_, optimalTime_, simulationSpeed_);
 		// Action two can't exist in non paused
 		//if (selectedObjectAction_ == 2) selectedObjectAction_ = 0;
 	}
