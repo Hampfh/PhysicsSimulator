@@ -76,7 +76,7 @@ public:
 	void OnCleanUp() const;
 
 	void AddState(States new_state);
-	void RunStates() const;
+	void RunStates();
 	void EndState(States end_state);
 	static void DrawPauseLogo(int x, int y, SDL_Color color);
 	void DrawSettingPackage() const;
@@ -86,11 +86,11 @@ public:
 	void DrawCircle(Vector2 location, float radius, SDL_Color* color, int cross_hair) const;
 };
 
-void ConvertCoordinates(Vector2* position, int origin_x, int origin_y, float zoom);
-void ConvertCoordinate(int* coordinate, int origin, float zoom);
+void ConvertCoordinates(Vector2* position, int origin_x, int origin_y, float zoom, int screen_width, int screen_height);
+void ConvertCoordinate(int* coordinate, int origin, float zoom, int screen);
+void CenterOrigin(Vector2* position, int origin_x, int origin_y, int screen_width, int screen_height);
+void CenterCoordinate(int* coordinate, int origin, int screen);
 void TransposePosition(Vector2* position, int origin_x, int origin_y);
 void TransposeCoordinate(int* coordinate, int origin);
 void ZoomPosition(Vector2* position, float zoom);
 void ZoomCoordinate(int* coordinate, float zoom);
-void RenderLine(SDL_Renderer* renderer, int x1, int y1, int x2, int y2, float zoom, int origin_x, int origin_y);
-

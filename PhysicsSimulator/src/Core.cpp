@@ -14,6 +14,7 @@ Core::Core() {
 	originY_ = screenHeight_ / 2;
 	fps_ = 60;
 	renderCrossHair_ = false;
+	optimalTime_ = 0;
 }
 
 int Core::OnExecute() {
@@ -62,7 +63,7 @@ bool Core::OnInit() {
 void Core::OnEvent(SDL_Event* event) {
 	SDL_GetMouseState(&mouseX_, &mouseY_);
 
-	hoverObject_ = universe_->GetObjectOnPosition(&Vector2((float)mouseX_, (float)mouseY_), zoom_);
+	hoverObject_ = universe_->GetObjectOnPosition(Vector2(static_cast<float>(mouseX_), static_cast<float>(mouseY_)), zoom_, screenWidth_, screenHeight_);
 
 	// Render cross hair on mouse
 	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
@@ -175,7 +176,14 @@ void Core::OnEvent(SDL_Event* event) {
 			renderCrossHair_ = !renderCrossHair_;
 			break;
 		case SDLK_l:
-			simulationStates_ = (simulationStates_ & LOCK_OBJECT ? simulationStates_ & ~LOCK_OBJECT : simulationStates_ | LOCK_OBJECT);
+			// Toggle lock object
+			if (simulationStates_ & LOCK_OBJECT) {
+				EndState(LOCK_OBJECT);
+			} else {
+				if (hoverObject_ != nullptr) {
+					AddState(LOCK_OBJECT);
+				}
+			}
 			break;
 		default:
 			break;
@@ -234,16 +242,12 @@ void Core::AddState(const States new_state) {
 
 	switch(new_state) {
 		case MOVEMENT: // Begin object movement state
-			std::cout << "Started MOVEMENT state" << std::endl;
 			selectedObject_ = hoverObject_;
 		break;
 		case SHOW_PROPERTIES: // Begin display object properties
-			std::cout << "Started PROPERTIES state" << std::endl;
 			selectedObject_ = hoverObject_;
 
 			package = selectedObject_->PrepareObjectSettings();
-
-			std::cout << "ADDED text textures" << std::endl;
 
 			SDL_Color textColor;
 			textColor.r = 20;
@@ -254,7 +258,6 @@ void Core::AddState(const States new_state) {
 			// Create text elements
 			for (int i = 0; i < package.package_size; i++) {
 				auto currentSetting = package.settings[i];
-				std::cout << currentSetting.settingTextBox.x << std::endl;
 				const auto settingObject = textDisplay_->CreateTextObject(
 					currentSetting.settingTextBox, 
 					&currentSetting.text, 
@@ -262,29 +265,35 @@ void Core::AddState(const States new_state) {
 					currentSetting.fontSize,
 					textColor
 				);
-				std::cout << "Created object" << std::endl;
 				if (i == 0) {
 					tempSettingStorageFirst_ = settingObject;
 					tempSettingStorageFirst_->mainRect = *package.settingsBox;
-					std::cout << "FIRST OBJECT: " << tempSettingStorageFirst_->textRect.x << std::endl;
 				} else if (i + 1 == package.package_size) {
 					tempSettingStorageLast_ = settingObject;
 				}
 			}
+		case LOCK_OBJECT:
+			selectedObject_ = hoverObject_;
+		break;
 		break;
 		default:
 
 		break;
 	}
 	// Add state
-	simulationStates_ = simulationStates_ & new_state;
+	simulationStates_ = simulationStates_ | new_state;
 }
 
-void Core::RunStates() const {
+void Core::RunStates() {
+	// Remove LOCK_OBJECT state if selectedObject is nullptr
+	if (simulationStates_ & LOCK_OBJECT && selectedObject_ == nullptr) {
+		EndState(LOCK_OBJECT);
+	}
+
 	if (simulationStates_ & MOVEMENT) {
 		Vector2 currentPos = *selectedObject_->GetLocation();
 
-		ConvertCoordinates(&currentPos, originX_, originY_, zoom_);
+		ConvertCoordinates(&currentPos, originX_, originY_, zoom_, screenWidth_, screenHeight_);
 
 		SDL_RenderDrawLine(renderer_, static_cast<int>(currentPos.x),
 		                   static_cast<int>(currentPos.y), mouseX_, mouseY_);
@@ -293,23 +302,25 @@ void Core::RunStates() const {
 		DrawSettingPackage();
 	}
 	if (simulationStates_ & LOCK_OBJECT) {
-		
+		// Change origin position to selected objects position
+		originX_ = selectedObject_->GetLocation()->x;
+		originY_ = selectedObject_->GetLocation()->y;
 	}
 }
 
 void Core::EndState(const States end_state) {
 	switch (simulationStates_) {
 		case 1: // End selection state
-			std::cout << "ENDED MOVEMENT state" << std::endl;
 			selectedObject_ = nullptr;
 		break;
 		case 2: // End view properties state
-			std::cout << "ENDED PROPERTIES state" << std::endl;
 			selectedObject_ = nullptr;
 			//pause_ = false;
 
 			textDisplay_->DeleteTextObjects(tempSettingStorageFirst_, tempSettingStorageLast_);
-			std::cout << "Removed text textures" << std::endl;
+		break;
+		case 3:
+			// Code to execute when state three is ended
 		break;
 		default:
 		break;
@@ -341,8 +352,8 @@ void Core::DrawSettingPackage() const {
 	newRect.h = tempSettingStorageFirst_->mainRect.h;
 
 	// Convert position
-	ConvertCoordinate(&newRect.x, originX_, zoom_);
-	ConvertCoordinate(&newRect.y, originX_, zoom_);
+	ConvertCoordinate(&newRect.x, originX_, zoom_, screenWidth_);
+	ConvertCoordinate(&newRect.y, originY_, zoom_, screenHeight_);
 
 	// Draw settings background
 	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, 225);
@@ -355,7 +366,7 @@ void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const in
 
 	radius = radius * zoom_;
 
-	ConvertCoordinates(&location, originX_, originY_, zoom_);
+	ConvertCoordinates(&location, originX_, originY_, zoom_, screenWidth_, screenHeight_);
 
 	if (cross_hair) {
 		// Render a x on the planet position
@@ -401,6 +412,7 @@ void Core::UpdateGraphics() const {
 		current->ResetColor();
 		current = current->next;
 	}
+
 	/*
 	// Draw line between selected object and mouse
 	if (selectedObject_ != nullptr && simulatorState_ == MOVEMENT) {
@@ -417,21 +429,30 @@ void Core::UpdateGraphics() const {
 	}*/
 }
 
-void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_y, const float zoom) {
-	//InvertYAxis(position, screen_height);
+void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_y, const float zoom, const int screen_width, const int screen_height) {
+	CenterOrigin(position, origin_x, origin_y, screen_width, screen_height);
 	TransposePosition(position, origin_x, origin_y);
 	ZoomPosition(position, zoom);
 	TransposePosition(position, -origin_x, -origin_y);
 }
 
-void ConvertCoordinate(int* coordinate, const int origin, const float zoom) {
+void ConvertCoordinate(int* coordinate, const int origin, const float zoom, const int screen) {
 	TransposeCoordinate(coordinate, origin);
 	ZoomCoordinate(coordinate, zoom);
 	TransposeCoordinate(coordinate, -origin);
+	CenterCoordinate(coordinate, origin, screen);
+}
+
+void CenterOrigin(Vector2* position, const int origin_x, const int origin_y, const int screen_width, const int screen_height) {
+	position->x -= origin_x - static_cast<int>(screen_width / 2);
+	position->y -= origin_y - static_cast<int>(screen_height / 2);
+}
+
+void CenterCoordinate(int* coordinate, const int origin, const int screen) {
+	*coordinate -= origin - static_cast<int>(screen / 2);
 }
 
 void TransposePosition(Vector2* position, const int origin_x, const int origin_y) {
-
 	position->x = position->x - origin_x;
 	position->y = position->y - origin_y;
 }
@@ -448,14 +469,4 @@ void ZoomPosition(Vector2* position, const float zoom) {
 
 void ZoomCoordinate(int* coordinate, const float zoom) {
 	*coordinate = *coordinate * zoom;
-}
-
-void RenderLine(SDL_Renderer* renderer, const int x1, const int y1, const int x2, const int y2, const float zoom, const int origin_x, const int origin_y) {
-	Vector2 position(static_cast<float>(x1), static_cast<float>(y1));
-	Vector2 positionTwo(static_cast<float>(x2), static_cast<float>(y2));
-
-	ConvertCoordinates(&position, origin_x, origin_y, zoom);
-	ConvertCoordinates(&positionTwo, origin_x, origin_y, zoom);
-
-	SDL_RenderDrawLine(renderer, static_cast<int>(position.x), static_cast<int>(position.y), static_cast<int>(positionTwo.x), static_cast<int>(positionTwo.y));
 }

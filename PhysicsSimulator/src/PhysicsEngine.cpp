@@ -6,8 +6,6 @@ double CalculateForceBetweenObjects(Vector2* pos1, Vector2* pos2, double m1, dou
 	F = G --------
 		    r^2
 	*/
-	std::cout << m2 << std::endl;
-
 	const double G = 6.672f * pow(10, -11);
 	const double r = DistanceDifference(pos1, pos2);
 
@@ -40,17 +38,12 @@ void ApplyIndividualForce(PhysicsObject* object, Vector2 target_position, const 
 	dir = dir.SetMag(static_cast<float>(forceStrength / object->GetMass()));
 
 	object->ApplyForce(dir);
-
-	std::cout << DistanceDifference(pos1, &target_position) << std::endl;
 }
 
 ////////////////////////////////////////////////// PhysicsEngine //////////////////////////////////////////////////////////////
 
 int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* second, Universe* universe) const {
-	std::cout << "X: " << first->GetX() << std::endl;
-	std::cout << "SX: " << second->GetX() << std::endl;
 	const double distance = DistanceDifference(first, second);
-	std::cout << "------" << std::endl;
 
 	// Collision has happened
 	if (distance < first->GetRadius() + second->GetRadius()) {
@@ -93,18 +86,10 @@ int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* seco
 			pow(second->GetVelocity()->y, 2) * static_cast<double>(1)/static_cast<double>(2) * second->GetMass()
 		);
 
-		std::cout << "===STATS===\nV2 x: " << pow(second->GetVelocity()->x, 2) << "\nV2 y: " << pow(second->GetVelocity()->y, 2) << "\nOther calculation: " << 
-			static_cast<double>(1)/static_cast<double>(2) * second->GetMass() << "\n===========" << std::endl;
-
-
 		//const auto secondWork = *second->GetVelocity() * second->GetVelocity()->SetMag(static_cast<double>(1)/2 * second->GetMass());
 
 		// Add together kinetic energy
 		const Vector2 newWork = firstWork + secondWork;
-
-		std::cout << "First Work: " << firstWork << std::endl;
-		std::cout << "Second Work: " << secondWork << std::endl;
-		std::cout << "Work: " << newWork << std::endl;
 
 		// Calc velocity from work 
 		// (2KE / m))**(1/2) = v
@@ -129,10 +114,10 @@ int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* seco
 			}
 		}
 
-		std::cout << "Velocity: " << newVelocity << std::endl;
+		//std::cout << "Velocity: " << newVelocity << std::endl;
 
 		// Apply new velocity
-		//object->SetVelocity(newVelocity);
+		object->SetVelocity(newVelocity);
 
 		// Delete old objects
 		universe->Delete(first);

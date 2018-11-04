@@ -164,7 +164,7 @@ PhysicsObject* Universe::GetFirst() const {
 PhysicsObject* Universe::GetLast() const {
 	return lastObject_;
 }
-PhysicsObject* Universe::GetObjectOnPosition(Vector2* location, float zoom) const {
+PhysicsObject* Universe::GetObjectOnPosition(Vector2 location, const float zoom, const int screen_width, const int screen_height) const {
 	if (firstObject_ == nullptr) {
 		return nullptr;
 	}
@@ -176,9 +176,9 @@ PhysicsObject* Universe::GetObjectOnPosition(Vector2* location, float zoom) cons
 	while (current != nullptr) {
 
 		Vector2 newLocation = *current->GetLocation();
-		ConvertCoordinates(&newLocation, *originX_, *originY_, zoom);
+		ConvertCoordinates(&newLocation, *originX_, *originY_, zoom, screen_width, screen_height);
 
-		const auto distanceBetween = static_cast<int>(DistanceDifference(&newLocation, location)); 
+		const auto distanceBetween = static_cast<int>(DistanceDifference(&newLocation, &location)); 
 		if (distanceBetween <= current->GetRadius() * zoom) {
 			return current;
 		}
@@ -230,8 +230,7 @@ PhysicsObject* Universe::SummonObject(Vector2* position, const double radius, co
 	ZoomPosition(position, 1 / *zoom_);
 	TransposePosition(position, -*originX_, -*originY_);
 
-	PhysicsObject* newObject = new PhysicsObject(newId, position, radius, mass, color);
+	const auto newObject = new PhysicsObject(newId, position, radius, mass, color);
 	InsertObject(newObject);
-	std::cout << "OBJECT CREATED" << std::endl;
 	return newObject;
 }
