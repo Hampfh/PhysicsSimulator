@@ -18,12 +18,14 @@ public:
 	Vector2 operator- (Vector2 secondVec) const;
 	Vector2 operator* (Vector2 secondVec) const;
 	Vector2 operator/ (Vector2 secondVec) const;
-	bool operator< (const Vector2 secondVec) const;
-	bool operator> (const Vector2 secondVec) const;
+	bool operator< (Vector2 secondVec) const;
+	bool operator> (Vector2 secondVec) const;
 	bool operator== (Vector2 secondVec) const;
+	double GetMagnitude() const;
 	void Limit(int limit);
-	Vector2 SetMag(float magnitude);
-	Vector2 Divide(float divider);
+	Vector2 Multiply(float factor);
+	Vector2 Divide(float numerator);
+
 };
 
 std::ostream& operator<<(std::ostream& os, Vector2 vector);

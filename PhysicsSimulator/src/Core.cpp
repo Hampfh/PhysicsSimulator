@@ -161,7 +161,7 @@ void Core::OnEvent(SDL_Event* event) {
 			break;
 		case SDLK_h:
 			// halt the object, remove all velocity
-			if (hoverObject_ != nullptr) { hoverObject_->GetVelocity()->SetMag(0); }
+			if (hoverObject_ != nullptr) { hoverObject_->GetVelocity()->Multiply(0); }
 			break;
 		case SDLK_UP:
 			originY_ += 100;

@@ -35,7 +35,7 @@ void ApplyIndividualForce(PhysicsObject* object, Vector2 target_position, const 
 		    r^2
 	*/
 	const double forceStrength = CalculateForceBetweenObjects(object->GetLocation(), &target_position, object->GetMass(), object->GetMass() * DistanceDifference(pos1, &target_position) * amplified_force);
-	dir = dir.SetMag(static_cast<float>(forceStrength / object->GetMass()));
+	dir = dir.Multiply(static_cast<float>(forceStrength / object->GetMass()));
 
 	object->ApplyForce(dir);
 }
@@ -73,51 +73,28 @@ int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* seco
 		// Create new object
 		PhysicsObject* object = universe->SummonObject(&newPos, newRadius, newMass, &color);
 
-		// Calculate work
+		// Calculate kinetic energy
 		// KE = 1/2 * m * v2
-		// Calc first object's work
-		const Vector2 firstWork(
-			pow(first->GetVelocity()->x, 2) * static_cast<double>(1)/static_cast<double>(2) * first->GetMass(),
-			pow(first->GetVelocity()->y, 2) * static_cast<double>(1)/static_cast<double>(2) * first->GetMass()
-		); 
-		// Calc second object's work
-		const Vector2 secondWork(
-			pow(second->GetVelocity()->x, 2) * static_cast<double>(1)/static_cast<double>(2) * second->GetMass(),
-			pow(second->GetVelocity()->y, 2) * static_cast<double>(1)/static_cast<double>(2) * second->GetMass()
-		);
+		// Calc first object's KE
+		const double firstKineticEnergy = pow(first->GetVelocity()->GetMagnitude(), 2) * static_cast<double>(1)/static_cast<double>(2) * first->GetMass();
+		Vector2 firstUnitVector = first->GetVelocity()->Divide(first->GetVelocity()->GetMagnitude());
+		const Vector2 firstKeVector = firstUnitVector.Multiply(firstKineticEnergy);
 
-		//const auto secondWork = *second->GetVelocity() * second->GetVelocity()->SetMag(static_cast<double>(1)/2 * second->GetMass());
+		const double secondKineticEnergy = pow(second->GetVelocity()->GetMagnitude(), 2) * static_cast<double>(1)/static_cast<double>(2) * second->GetMass();
+		Vector2 secondUnitVector = second->GetVelocity()->Divide(second->GetVelocity()->GetMagnitude());
+		const Vector2 secondKeVector = secondUnitVector.Multiply(secondKineticEnergy);
 
-		// Add together kinetic energy
-		const Vector2 newWork = firstWork + secondWork;
+		Vector2 totalKeVector = firstKeVector + secondKeVector;
+		const double totalKeMag = totalKeVector.GetMagnitude();
+		Vector2 totalUnitVector = totalKeVector.Divide(totalKeMag);
 
-		// Calc velocity from work 
-		// (2KE / m))**(1/2) = v
-		Vector2 newVelocity;
-		newVelocity.x = std::sqrt(2 * newWork.x / newMass);
-		newVelocity.y = std::sqrt(2 * newWork.y / newMass);
+		const double newVelocity = std::sqrt(2 * totalKeMag / newMass);
 
-		// Multiply velocity with -1 if heavier object has a velocity in negative direction
-		if (first->GetMass() > second->GetMass()) {
-			if (first->GetVelocity()->x < 0) {
-				newVelocity.x = newVelocity.x * -1;
-			}
-			if (first->GetVelocity()->y < 0) {
-				newVelocity.y = newVelocity.y * -1;
-			}
-		} else {
-			if (second->GetVelocity()->x < 0) {
-				newVelocity.x = newVelocity.x * -1;
-			}
-			if (second->GetVelocity()->y < 0) {
-				newVelocity.y = newVelocity.y * -1;
-			}
-		}
-
-		//std::cout << "Velocity: " << newVelocity << std::endl;
-
+		const Vector2 newVelocityVector = totalUnitVector.Multiply(newVelocity);
+		
 		// Apply new velocity
-		object->SetVelocity(newVelocity);
+		std::cout << newVelocityVector << std::endl;
+		object->SetVelocity(newVelocityVector);
 
 		// Delete old objects
 		universe->Delete(first);
@@ -174,7 +151,7 @@ void PhysicsEngine::UpdatePhysics(Universe* universe, const float delta_time, co
 				    r^2
 			*/
 			const float forceStrength = static_cast<float>(6.672f * pow(10, -11)) * (static_cast<float>(current->GetMass() * static_cast<float>(currentMatcher->GetMass())) / pow(DistanceDifference(current, currentMatcher), 2));
-			dir = dir.SetMag(forceStrength / static_cast<float>(current->GetMass()));
+			dir = dir.Multiply(forceStrength / static_cast<float>(current->GetMass()));
 
 			current->ApplyForce(dir);
 
@@ -183,14 +160,14 @@ void PhysicsEngine::UpdatePhysics(Universe* universe, const float delta_time, co
 			
 		// Set velocity
 		// v = v0 + a * delta-t
-		current->SetVelocity(*current->GetVelocity() + current->GetAcceleration()->SetMag(delta_time * simulation_speed));
+		current->SetVelocity(*current->GetVelocity() + current->GetAcceleration()->Multiply(delta_time * simulation_speed));
 
 		// Set location --
 		// s = s0 + v * delta-t
 		current->SetLocation(*current->GetLocation() + *current->GetVelocity());
 
 		// Reset acceleration
-		current->GetAcceleration()->SetMag(0);
+		current->GetAcceleration()->Multiply(0);
 
 		current = current->next;
 	}

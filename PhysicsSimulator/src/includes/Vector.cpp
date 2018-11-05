@@ -46,6 +46,10 @@ bool Vector2::operator== (Vector2 secondVec) const {
 	return (x == secondVec.x && y == secondVec.y);
 }
 
+double Vector2::GetMagnitude() const {
+	return sqrt(pow(this->x, 2) + pow(this->y, 2));
+}
+
 void Vector2::Limit(const int limit) {
 	if (this->x < 0.0f && abs(this->x) > limit) {
 		this->x = limit * -1;
@@ -62,16 +66,16 @@ void Vector2::Limit(const int limit) {
 	}
 }
 
-Vector2 Vector2::SetMag(float magnitude) {
+Vector2 Vector2::Multiply(const float factor) {
 	return Vector2{
-		this->x = this->x * magnitude,
-		this->y = this->y * magnitude
+		this->x = this->x * factor,
+		this->y = this->y * factor
 	};
 }
 
-Vector2 Vector2::Divide(const float divider) {
-	return Vector2{this->x = this->x / divider,
-		this->y = this->y / divider};
+Vector2 Vector2::Divide(const float numerator) {
+	return Vector2{this->x = this->x / numerator,
+		this->y = this->y / numerator};
 }
 
 std::ostream& operator<<(std::ostream& os, Vector2 vector) {
