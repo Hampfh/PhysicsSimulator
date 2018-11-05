@@ -122,11 +122,9 @@ void Core::OnEvent(SDL_Event* event) {
 			// If selectedObject has selection then mark position
 			if (selectedObject_ != nullptr) {
 				// Add force in the direction
-				Vector2* pos1 = selectedObject_->GetLocation();
-
 				const Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 
-				ApplyIndividualForce(selectedObject_, pos2, 0.1);
+				ApplyIndividualForce(selectedObject_, pos2, 1);
 			}
 		} 
 		
@@ -275,7 +273,6 @@ void Core::AddState(const States new_state) {
 		case LOCK_OBJECT:
 			selectedObject_ = hoverObject_;
 		break;
-		break;
 		default:
 
 		break;
@@ -365,6 +362,11 @@ void Core::DrawSettingPackage() const {
 void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const int cross_hair) const {
 
 	radius = radius * zoom_;
+
+	// Optimizations (never draw a circle bigger than screen)
+	if (radius > screenWidth_) {
+		radius = screenWidth_;
+	}
 
 	ConvertCoordinates(&location, originX_, originY_, zoom_, screenWidth_, screenHeight_);
 

@@ -108,7 +108,7 @@ int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* seco
 void PhysicsEngine::UpdatePhysics(Universe* universe, const float delta_time, const float simulation_speed) const {
 	// Temporary variables
 	PhysicsObject* current = universe->GetFirst();
-	PhysicsObject* currentMatcher = universe->GetFirst();
+	PhysicsObject* currentMatcher;
 
 	// Collision checking
 	while (current != nullptr) {
