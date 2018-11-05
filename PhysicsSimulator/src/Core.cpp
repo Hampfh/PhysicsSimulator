@@ -375,7 +375,7 @@ void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const in
 		SDL_RenderDrawLine(renderer_, location.x, location.y + 10, location.x, location.y - 10);	
 	}
 
-	for (auto dy = 1; dy <= radius; dy++) {
+	for (auto dy = 1; dy <= radius + 1; dy++) {
 		const auto dx = floor(sqrt((2.0 * radius * dy) - (dy * dy)));
 		SDL_SetRenderDrawColor(renderer_, color->r, color->g, color->b, color->a);
 		SDL_RenderDrawLine(renderer_,
@@ -408,25 +408,9 @@ void Core::UpdateGraphics() const {
 	PhysicsObject* current = universe_->GetFirst();
 	while (current != nullptr) {
 		DrawCircle(*current->GetLocation(), static_cast<int>(current->GetRadius()), current->GetColor(), renderCrossHair_);
-		//current->DrawCircle(metersPerPixel_);
 		current->ResetColor();
 		current = current->next;
 	}
-
-	/*
-	// Draw line between selected object and mouse
-	if (selectedObject_ != nullptr && simulatorState_ == MOVEMENT) {
-		Vector2 currentPos = *selectedObject_->GetLocation();
-
-		ConvertCoordinates(&currentPos, originX_, originY_, zoom_);
-
-		SDL_RenderDrawLine(renderer_, static_cast<int>(currentPos.x),
-		                   static_cast<int>(currentPos.y), mouseX_, mouseY_);
-	}
-	// Display settings box
-	else if (selectedObject_ != nullptr && simulatorState_ == SHOW_PROPERTIES) {
-		DrawSettingPackage();
-	}*/
 }
 
 void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_y, const float zoom, const int screen_width, const int screen_height) {
@@ -437,10 +421,10 @@ void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_
 }
 
 void ConvertCoordinate(int* coordinate, const int origin, const float zoom, const int screen) {
+	CenterCoordinate(coordinate, origin, screen);
 	TransposeCoordinate(coordinate, origin);
 	ZoomCoordinate(coordinate, zoom);
 	TransposeCoordinate(coordinate, -origin);
-	CenterCoordinate(coordinate, origin, screen);
 }
 
 void CenterOrigin(Vector2* position, const int origin_x, const int origin_y, const int screen_width, const int screen_height) {
