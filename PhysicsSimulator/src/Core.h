@@ -66,6 +66,8 @@ class Core {
 	static PhysicsEngine* pe_;
 	Universe* universe_ = nullptr;
 	FontDisplay* textDisplay_ = nullptr;
+
+	TextElementList* zoomText_;
 public:
 	Core();
 	int OnExecute();
@@ -89,7 +91,9 @@ public:
 void ConvertCoordinates(Vector2* position, int origin_x, int origin_y, float zoom, int screen_width, int screen_height);
 void ConvertCoordinate(int* coordinate, int origin, float zoom, int screen);
 void CenterOrigin(Vector2* position, int origin_x, int origin_y, int screen_width, int screen_height);
+void ReverseOrigin(Vector2* position, int origin_x, int origin_y, int screen_width, int screen_height);
 void CenterCoordinate(int* coordinate, int origin, int screen);
+void ReverseCoordinate(int* coordinate, int origin, int screen);
 void TransposePosition(Vector2* position, int origin_x, int origin_y);
 void TransposeCoordinate(int* coordinate, int origin);
 void ZoomPosition(Vector2* position, float zoom);

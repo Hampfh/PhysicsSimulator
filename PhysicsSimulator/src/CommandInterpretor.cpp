@@ -1,14 +1,14 @@
 #include "CommandInterpretor.h"
 
-void CheckConsole(Universe* universe) {
+void RunInterpreter(Universe* universe, float *simulation_speed) {
 	while (true) {
 		std::string input;
 		std::getline(std::cin, input);
-		ConsoleInterpretation(&input, universe);	
+		ConsoleInterpretation(&input, universe, simulation_speed);	
 	}
 }
 
-void ConsoleInterpretation(std::string* command, Universe* universe) {
+void ConsoleInterpretation(std::string* command, Universe* universe, float* simulation_speed) {
 	const int commandMaxArguments = 4;
 	std::string input[commandMaxArguments];
 	std::stringstream ss(*command);
@@ -28,7 +28,7 @@ void ConsoleInterpretation(std::string* command, Universe* universe) {
 			auto object = universe->GetObjectWithId(id);
 
 			if (object == nullptr) {
-				std::cout << "ERROR: No object with ID:" << id << " found" << std::endl;
+				std::cerr << "ERROR: No object with ID:" << id << " found" << std::endl;
 				return;
 			}
 
@@ -40,7 +40,7 @@ void ConsoleInterpretation(std::string* command, Universe* universe) {
 					object->SetMass(value);
 					std::cout << "Mass successfully changed to " << value << std::endl;
 				}
-				else { std::cout << "ERROR: No number was entered" << std::endl; }
+				else { std::cerr << "ERROR: No number was entered" << std::endl; }
 			}
 			else if (input[2] == "setRadius") {
 				if (IsNumber(input[3])) {
@@ -50,10 +50,10 @@ void ConsoleInterpretation(std::string* command, Universe* universe) {
 					object->SetRadius(value);
 					std::cout << "Radius successfully changed to " << value << std::endl;
 				}
-				else { std::cout << "ERROR: No number was entered" << std::endl; }
+				else { std::cerr << "ERROR: No number was entered" << std::endl; }
 			}
 			else if (input[2].empty()) { std::cout << "System: Found object <" << object << ">" << std::endl; }
-			else { std::cout << "ERROR: No such command" << std::endl; }
+			else { std::cerr << "ERROR: No such command" << std::endl; }
 		}
 		else { std::cout << "ERROR: Input was not number" << std::endl; }
 	} else if (input[0] == "/toggle") {
@@ -62,10 +62,19 @@ void ConsoleInterpretation(std::string* command, Universe* universe) {
 		} else if (input[1] == "velocity") {
 			std::cout << "SETTING OFF" << std::endl;
 		} else {
-			std::cout << "ERROR: No specifier" << std::endl;
+			std::cerr << "ERROR: No specifier" << std::endl;
+		}
+	} else if (input[0] == "/speed") {
+		if (input[1] == "set") {
+			if (IsNumber(input[2])) {
+				*simulation_speed = std::stof(input[2]);
+				std::cout << "Simulation speed changed to: " << *simulation_speed << std::endl;
+			} 
+		} else if (input[1] == "get") {
+			std::cout << "Simulation speed: " << *simulation_speed << std::endl;
 		}
 	} else {
-		std::cout << "ERROR: No such command" << std::endl;
+		std::cerr << "ERROR: No such command" << std::endl;
 	}
 }
 

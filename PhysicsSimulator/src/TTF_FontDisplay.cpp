@@ -12,7 +12,7 @@ FontDisplay::~FontDisplay() {
 }
 
 TextElementList* FontDisplay::AddToQueue() {
-	// Add textObject to list
+	// Create new empty textElement
 	if (first_ == nullptr) {
 		first_ = new TextElementList;
 		last_ = first_;
@@ -107,7 +107,10 @@ void FontDisplay::DeleteAll() const {
 	auto prev = first_->prev;
 
 	while (current != nullptr) {
-		delete prev;
+		if (prev != nullptr) {
+			SDL_DestroyTexture(prev->textTexture);
+			delete prev;
+		}
 		prev = current;
 		current = current->next;
 	}
@@ -130,6 +133,7 @@ void FontDisplay::DeleteTextObject(TextElementList* text_object) {
 			}
 			// Delete current
 			delete current;
+			break;
 		}
 
 		prev = current;
@@ -144,7 +148,7 @@ void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* las
 	TextElementList* link = current->prev;
 
 	while (current == nullptr) {
-		
+		SDL_DestroyTexture(prev->textTexture);
 		delete prev;
 
 		if (current == last) {
@@ -159,6 +163,7 @@ void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* las
 			else if (link == nullptr && last != last_) {
 				last->next = first_;
 			}
+			SDL_DestroyTexture(current->textTexture);
 			delete current;
 			break;
 		}

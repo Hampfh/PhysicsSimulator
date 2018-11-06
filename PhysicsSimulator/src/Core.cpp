@@ -15,6 +15,7 @@ Core::Core() {
 	fps_ = 60;
 	renderCrossHair_ = false;
 	optimalTime_ = 0;
+	zoomText_ = nullptr;
 }
 
 int Core::OnExecute() {
@@ -53,8 +54,26 @@ bool Core::OnInit() {
 
 	textDisplay_ = new FontDisplay;
 
+	// Create right bottom text
+	SDL_Rect rect;
+	rect.w = 150;
+	rect.h = 20;
+	rect.x = screenWidth_ - rect.w;
+	rect.y = screenHeight_ - rect.h;
+
+	SDL_Color color;
+	color.r = 20;
+	color.g = 20;
+	color.b = 20;
+	color.a = 255;
+
+	std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
+	std::string message = "Current zoom: " + std::to_string(zoom_);
+
+	zoomText_ = textDisplay_->CreateTextObject(rect, &message, &fontPath, 12, color);
+
 	// Create console thread
-	std::thread consoleInput(CheckConsole, universe_);
+	std::thread consoleInput(RunInterpreter, universe_, &simulationSpeed_);
 	consoleInput.detach();
 
 	return true;
@@ -103,6 +122,12 @@ void Core::OnEvent(SDL_Event* event) {
 
 				// Summon sphere
 				Vector2 position(mouseX_, mouseY_);
+				
+				TransposePosition(&position, originX_, originY_);
+				ZoomPosition(&position, 1 / zoom_);
+				TransposePosition(&position, -originX_, -originY_);
+				position.x += originX_ - static_cast<int>(screenWidth_ / 2);
+				position.y += originY_ - static_cast<int>(screenHeight_ / 2);
 
 				SDL_Color color;
 				color.r = 20;
@@ -135,14 +160,61 @@ void Core::OnEvent(SDL_Event* event) {
 	case SDL_MOUSEWHEEL:
 		if (event->wheel.y < 0) {
 			// zoom in
-			originX_ = mouseX_;
-			originY_ = mouseY_;
-			zoom_ *= 0.9f;
+			if (simulationStates_ & LOCK_OBJECT) {
+				
+			} else {
+				originX_ = mouseX_;
+				originY_ = mouseY_;
+			}
+			zoom_ /= 0.9f;
+			
+			textDisplay_->DeleteTextObject(zoomText_);
+			// Create right bottom text
+			SDL_Rect rect;
+			rect.w = 150;
+			rect.h = 20;
+			rect.x = screenWidth_ - rect.w;
+			rect.y = screenHeight_ - rect.h;
+
+			SDL_Color color;
+			color.r = 20;
+			color.g = 20;
+			color.b = 20;
+			color.a = 255;
+
+			std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
+			std::string message = "Current zoom: " + std::to_string(zoom_);
+
+			zoomText_ = textDisplay_->CreateTextObject(rect, &message, &fontPath, 12, color);
+
 		} else if (event->wheel.y > 0 ) {
 			// zoom out
-			originX_ = mouseX_;
-			originY_ = mouseY_;
+			if (simulationStates_ & LOCK_OBJECT) {
+				
+			} else {
+				originX_ = mouseX_;
+				originY_ = mouseY_;
+			}
 			zoom_ *= 1.1f;
+
+			textDisplay_->DeleteTextObject(zoomText_);
+			// Create right bottom text
+			SDL_Rect rect;
+			rect.w = 150;
+			rect.h = 20;
+			rect.x = screenWidth_ - rect.w;
+			rect.y = screenHeight_ - rect.h;
+
+			SDL_Color color;
+			color.r = 20;
+			color.g = 20;
+			color.b = 20;
+			color.a = 255;
+
+			std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
+			std::string message = "Current zoom: " + std::to_string(zoom_);
+
+			zoomText_ = textDisplay_->CreateTextObject(rect, &message, &fontPath, 12, color);
 		}
 		break;
 	case SDL_KEYDOWN:
@@ -165,7 +237,7 @@ void Core::OnEvent(SDL_Event* event) {
 			originY_ += 100;
 			break;
 		case SDLK_DOWN:
-			originY_ += 100;
+			originY_ -= 100;
 			break;
 		case SDLK_c:
 			universe_->ClearUniverse();
@@ -413,6 +485,13 @@ void Core::UpdateGraphics() const {
 		current->ResetColor();
 		current = current->next;
 	}
+
+	textDisplay_->DisplayText(zoomText_);
+
+	// Render cross hair att origin
+	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
+	SDL_RenderDrawLine(renderer_, originX_ - 10, originY_, originX_ + 10, originY_);
+	SDL_RenderDrawLine(renderer_, originX_, originY_ + 10, originX_, originY_ - 10);	
 }
 
 void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_y, const float zoom, const int screen_width, const int screen_height) {
@@ -434,7 +513,17 @@ void CenterOrigin(Vector2* position, const int origin_x, const int origin_y, con
 	position->y -= origin_y - static_cast<int>(screen_height / 2);
 }
 
+void ReverseOrigin(Vector2* position, const int origin_x, const int origin_y, const int screen_width, const int screen_height) {
+	position->x += origin_x - static_cast<int>(screen_width / 2);
+	position->y += origin_y - static_cast<int>(screen_height / 2);
+}
+
+
 void CenterCoordinate(int* coordinate, const int origin, const int screen) {
+	*coordinate -= origin - static_cast<int>(screen / 2);
+}
+
+void ReverseCoordinate(int* coordinate, const int origin, const int screen) {
 	*coordinate -= origin - static_cast<int>(screen / 2);
 }
 

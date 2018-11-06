@@ -3,5 +3,6 @@
 
 int main(int argc, char* args[]) {
 	Core theCore;
-	return theCore.OnExecute();
+	theCore.OnExecute();
+	return 0;
 }

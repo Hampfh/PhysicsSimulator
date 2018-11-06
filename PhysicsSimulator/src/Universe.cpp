@@ -225,11 +225,11 @@ PhysicsObject* Universe::SummonObject(Vector2* position, const double radius, co
 	} else {
 		newId = lastObject_->GetId() + 1;
 	}
-
+/*
 	TransposePosition(position, *originX_, *originY_);
 	ZoomPosition(position, 1 / *zoom_);
 	TransposePosition(position, -*originX_, -*originY_);
-
+	*/
 	const auto newObject = new PhysicsObject(newId, position, radius, mass, color);
 	InsertObject(newObject);
 	return newObject;
