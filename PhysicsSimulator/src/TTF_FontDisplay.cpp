@@ -71,9 +71,9 @@ void FontDisplay::DisplayText() const {
 }
 
 // Display the selected text object
-void FontDisplay::DisplayText(TextElementList* text_object) const {
+void FontDisplay::DisplayText(TextElementList* text_object) {
 	// Copy out text to screen
-	SDL_RenderCopy(Core::renderer_, last_->textTexture, nullptr, &last_->textRect);
+	SDL_RenderCopy(Core::renderer_, text_object->textTexture, nullptr, &text_object->textRect);
 }
 
 // Display all text object from first to last
@@ -144,12 +144,19 @@ void FontDisplay::DeleteTextObject(TextElementList* text_object) {
 // Deletes all objects between first and last
 void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* last) const {
 	auto current = first;
-	auto prev = first;
+	TextElementList* prev = nullptr;
 	TextElementList* link = current->prev;
+	
+	std::cout << "TEST0" << std::endl;
 
-	while (current == nullptr) {
-		SDL_DestroyTexture(prev->textTexture);
-		delete prev;
+	while (current != nullptr) {
+		std::cout << "TEST0.5" << std::endl;
+		if (prev != nullptr) {
+			SDL_DestroyTexture(prev->textTexture);
+			delete prev;	
+		}
+
+		std::cout << "TEST1" << std::endl;
 
 		if (current == last) {
 			// There are nodes before and after
@@ -171,4 +178,8 @@ void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* las
 		prev = current;
 		current = current->next;
 	}
+	// Reset first and last
+	first = nullptr;
+	last = nullptr;
+	std::cout << "DONE" << std::endl;
 }

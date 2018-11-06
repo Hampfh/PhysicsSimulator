@@ -279,9 +279,9 @@ void Core::OnLoop() {
 	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
 	SDL_RenderDrawPoint(renderer_, screenWidth_ / 2, screenHeight_ / 2);
 
-	RunStates();
-
 	UpdateGraphics();
+
+	RunStates();
 
 	StabilizeFPS();
 }
@@ -485,8 +485,8 @@ void Core::UpdateGraphics() const {
 		current->ResetColor();
 		current = current->next;
 	}
-
-	textDisplay_->DisplayText(zoomText_);
+	
+	FontDisplay::DisplayText(zoomText_);
 
 	// Render cross hair att origin
 	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
