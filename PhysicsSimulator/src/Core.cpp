@@ -166,7 +166,7 @@ void Core::OnEvent(SDL_Event* event) {
 				originX_ = mouseX_;
 				originY_ = mouseY_;
 			}
-			zoom_ /= 0.9f;
+			zoom_ *= 0.9f;
 			
 			textDisplay_->DeleteTextObject(zoomText_);
 			// Create right bottom text
