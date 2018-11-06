@@ -178,7 +178,7 @@ PhysicsObject* Universe::GetObjectOnPosition(Vector2 location, const float zoom,
 		Vector2 newLocation = *current->GetLocation();
 		ConvertCoordinates(&newLocation, *originX_, *originY_, zoom, screen_width, screen_height);
 
-		const auto distanceBetween = static_cast<int>(DistanceDifference(&newLocation, &location)); 
+		const auto distanceBetween = static_cast<int>(PhysicsEngine::DistanceDifference(&newLocation, &location)); 
 		if (distanceBetween <= current->GetRadius() * zoom) {
 			return current;
 		}

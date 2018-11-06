@@ -24,17 +24,17 @@ TextElementList* FontDisplay::AddToQueue() {
 	return last_;
 }
 
-TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string* message, std::string* font_path, const int font_size, SDL_Color fg) {
+TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string& message, std::string& font_path, const int font_size, SDL_Color fg) {
 
 	AddToQueue();
 
-	TTF_Font* font = TTF_OpenFont(font_path->c_str(), font_size);
+	TTF_Font* font = TTF_OpenFont(font_path.c_str(), font_size);
 	// Test if font was successfully imported 
 	if (!font) {
 		std::cerr << "Failed to load font" << std::endl;
 		return nullptr;
 	}
-	SDL_Surface* surface = TTF_RenderText_Solid(font, message->c_str(), fg);
+	SDL_Surface* surface = TTF_RenderText_Solid(font, message.c_str(), fg);
 	if (!surface) {
 		std::cerr << "Failed to create text surface" << std::endl;
 		return nullptr;
@@ -126,6 +126,7 @@ void FontDisplay::DeleteTextObject(TextElementList* text_object) {
 		if (current == text_object) {
 			if (current == first_) {
 				first_ = first_->next;
+				first_->prev = nullptr;
 			} else if (current == last_){
 				last_ = prev;
 			} else {

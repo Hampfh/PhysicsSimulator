@@ -19,7 +19,7 @@ private:
 public:
 	FontDisplay();
 	~FontDisplay();
-	TextElementList* CreateTextObject(SDL_Rect box, std::string* message, std::string* font_path, int font_size, SDL_Color fg);
+	TextElementList* CreateTextObject(SDL_Rect box, std::string& message, std::string& font_path, int font_size, SDL_Color fg);
 	void DisplayText() const;
 	static void DisplayText(TextElementList* text_object);
 	static void DisplayText(TextElementList* first, TextElementList* last, SDL_Rect* main_container);

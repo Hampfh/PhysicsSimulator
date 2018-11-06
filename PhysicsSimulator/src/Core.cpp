@@ -70,7 +70,7 @@ bool Core::OnInit() {
 	std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
 	std::string message = "Current zoom: " + std::to_string(zoom_);
 
-	zoomText_ = textDisplay_->CreateTextObject(rect, &message, &fontPath, 12, color);
+	zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, color);
 
 	// Create console thread
 	std::thread consoleInput(RunInterpreter, universe_, &simulationSpeed_);
@@ -149,7 +149,7 @@ void Core::OnEvent(SDL_Event* event) {
 				// Add force in the direction
 				const Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 
-				ApplyIndividualForce(selectedObject_, pos2, 1);
+				PhysicsEngine::ApplyIndividualForce(selectedObject_, pos2, 1);
 			}
 		} 
 		
@@ -185,7 +185,7 @@ void Core::OnEvent(SDL_Event* event) {
 			std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
 			std::string message = "Current zoom: " + std::to_string(zoom_);
 
-			zoomText_ = textDisplay_->CreateTextObject(rect, &message, &fontPath, 12, color);
+			zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, color);
 
 		} else if (event->wheel.y > 0 ) {
 			// zoom out
@@ -214,7 +214,7 @@ void Core::OnEvent(SDL_Event* event) {
 			std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
 			std::string message = "Current zoom: " + std::to_string(zoom_);
 
-			zoomText_ = textDisplay_->CreateTextObject(rect, &message, &fontPath, 12, color);
+			zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, color);
 		}
 		break;
 	case SDL_KEYDOWN:
@@ -328,8 +328,8 @@ void Core::AddState(const States new_state) {
 				auto currentSetting = package.settings[i];
 				const auto settingObject = textDisplay_->CreateTextObject(
 					currentSetting.settingTextBox, 
-					&currentSetting.text, 
-					&currentSetting.fontPath, 
+					currentSetting.text, 
+					currentSetting.fontPath, 
 					currentSetting.fontSize,
 					textColor
 				);
@@ -358,12 +358,48 @@ void Core::RunStates() {
 	}
 
 	if (simulationStates_ & MOVEMENT) {
+		// Draw line between selected object and mouse cursor
 		Vector2 currentPos = *selectedObject_->GetLocation();
-
 		ConvertCoordinates(&currentPos, originX_, originY_, zoom_, screenWidth_, screenHeight_);
-
 		SDL_RenderDrawLine(renderer_, static_cast<int>(currentPos.x),
 		                   static_cast<int>(currentPos.y), mouseX_, mouseY_);
+
+		// Render force amount to be added
+		Vector2 cursorPos = Vector2(mouseX_, mouseY_);
+		
+		const double force = PhysicsEngine::CalculateForceBetweenObjects(
+			selectedObject_->GetLocation(), 
+			&cursorPos, 
+			selectedObject_->GetMass(), 
+			selectedObject_->GetMass() * PhysicsEngine::DistanceDifference(
+				selectedObject_->GetLocation(), 
+				&cursorPos
+			)
+		);
+
+		std::cout << force << std::endl;
+
+		SDL_Rect forceText;
+		forceText.w = 200;
+		forceText.h = 20;
+		forceText.x = mouseX_;
+		forceText.y = mouseY_ - 20;
+
+		SDL_Color color;
+		color.r = 20;
+		color.g = 20;
+		color.b = 20;
+		color.a = 255;
+
+		char txt[20];
+		std::sprintf(txt, "%e N", force);
+		std::string pth = "src/includes/fonts/Roboto/Roboto-Bold.ttf";
+
+		std::string out = txt;
+
+		const auto current = textDisplay_->CreateTextObject(forceText, out, pth, 12, color);
+		FontDisplay::DisplayText(current);
+		textDisplay_->DeleteTextObject(current);
 	}
 	if (simulationStates_ & SHOW_PROPERTIES) {
 		DrawSettingPackage();
