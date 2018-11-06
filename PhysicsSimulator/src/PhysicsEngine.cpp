@@ -80,24 +80,21 @@ int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* seco
 		Vector2 firstUnitVector = first->GetVelocity()->Divide(first->GetVelocity()->GetMagnitude());
 		const Vector2 firstKeVector = firstUnitVector.Multiply(firstKineticEnergy);
 
-		std::cout << "FirstKE: " << firstKineticEnergy << std::endl;
-
+		// Calc second object's KE
 		const double secondKineticEnergy = pow(second->GetVelocity()->GetMagnitude(), 2) * static_cast<double>(1)/static_cast<double>(2) * second->GetMass();
 		Vector2 secondUnitVector = second->GetVelocity()->Divide(second->GetVelocity()->GetMagnitude());
 		const Vector2 secondKeVector = secondUnitVector.Multiply(secondKineticEnergy);
 
-		std::cout << "SecondKE: " << secondKineticEnergy << std::endl;
-
+		// Merge first KE and second KE
 		Vector2 totalKeVector = firstKeVector + secondKeVector;
 		const double totalKeMag = totalKeVector.GetMagnitude();
 		Vector2 totalUnitVector = totalKeVector.Divide(totalKeMag);
 
+		// Calc velocity from KE
 		const double newVelocity = std::sqrt(2 * totalKeMag / newMass);
-
 		const Vector2 newVelocityVector = totalUnitVector.Multiply(newVelocity);
 		
 		// Apply new velocity
-		std::cout << newVelocityVector << std::endl;
 		object->SetVelocity(newVelocityVector);
 
 		// Delete old objects

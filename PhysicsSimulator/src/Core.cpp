@@ -267,8 +267,6 @@ void Core::OnEvent(SDL_Event* event) {
 void Core::OnLoop() {
 	if (!pause_) {
 		pe_->UpdatePhysics(universe_, optimalTime_, simulationSpeed_);
-		// Action two can't exist in non paused
-		//if (selectedObjectAction_ == 2) selectedObjectAction_ = 0;
 	}
 	else {
 		// When pause draw pause logo
