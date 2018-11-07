@@ -123,8 +123,13 @@ void FontDisplay::DeleteTextObject(TextElementList* text_object) {
 
 		if (current == text_object) {
 			if (current == first_) {
-				first_ = first_->next;
-				first_->prev = nullptr;	
+				if (first_->next == nullptr) {
+					first_ = nullptr;
+					last_ = nullptr;
+				} else {
+					first_ = first_->next;
+					first_->prev = nullptr;		
+				}
 			} else if (current == last_){
 				last_ = prev;
 				last_->next = nullptr;
@@ -149,16 +154,11 @@ void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* las
 	TextElementList* prev = nullptr;
 	TextElementList* link = current->prev;
 	
-	std::cout << "TEST0" << std::endl;
-
 	while (current != nullptr) {
-		std::cout << "TEST0.5" << std::endl;
 		if (prev != nullptr) {
 			SDL_DestroyTexture(prev->textTexture);
 			delete prev;	
 		}
-
-		std::cout << "TEST1" << std::endl;
 
 		if (current == last) {
 			// There are nodes before and after
@@ -183,5 +183,4 @@ void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* las
 	// Reset first and last
 	first = nullptr;
 	last = nullptr;
-	std::cout << "DONE" << std::endl;
 }

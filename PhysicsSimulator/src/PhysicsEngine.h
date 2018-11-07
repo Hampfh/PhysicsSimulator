@@ -17,5 +17,5 @@ public:
 	static double CalculateForceBetweenObjects(Vector2 pos1, Vector2 pos2, double m1, double m2);
 	static double DistanceDifference(PhysicsObject* point, PhysicsObject* point_two);
 	static double DistanceDifference(Vector2* point, Vector2* point_two);
-	static void ApplyIndividualForce(PhysicsObject* object, Vector2 target_position, float amplified_force);
+	static void ApplyIndividualForce(PhysicsObject* object, Vector2 target_position);
 };

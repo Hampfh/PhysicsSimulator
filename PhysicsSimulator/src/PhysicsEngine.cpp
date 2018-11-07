@@ -170,7 +170,7 @@ double PhysicsEngine::DistanceDifference(Vector2* point, Vector2* point_two) {
 	return sqrt(pow(differenceX, 2) + pow(differenceY, 2));
 }
 
-void PhysicsEngine::ApplyIndividualForce(PhysicsObject* object, Vector2 target_position, const float amplified_force) {
+void PhysicsEngine::ApplyIndividualForce(PhysicsObject* object, Vector2 target_position) {
 	Vector2* pos1 = object->GetLocation();
 	Vector2 dir = target_position - *pos1;
 
@@ -179,8 +179,9 @@ void PhysicsEngine::ApplyIndividualForce(PhysicsObject* object, Vector2 target_p
 	F = G --------
 		    r^2
 	*/
-	const double forceStrength = CalculateForceBetweenObjects(object->GetLocation(), &target_position, object->GetMass(), object->GetMass() * DistanceDifference(pos1, &target_position) * amplified_force);
-	dir = dir.Multiply(static_cast<float>(forceStrength / object->GetMass()));
+	double forceStrength = CalculateForceBetweenObjects(object->GetLocation(), &target_position, object->GetMass(), object->GetMass() * DistanceDifference(pos1, &target_position));
+	forceStrength *= DistanceDifference(pos1, &target_position) / object->GetMass();
+	dir = dir.Multiply(static_cast<float>(forceStrength));
 
 	object->ApplyForce(dir);
 }

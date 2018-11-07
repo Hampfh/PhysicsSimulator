@@ -158,7 +158,7 @@ void Core::OnEvent(SDL_Event* event) {
 				// Add force in the direction
 				const Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 
-				PhysicsEngine::ApplyIndividualForce(selectedObject_, pos2, 1);
+				PhysicsEngine::ApplyIndividualForce(selectedObject_, pos2);
 			}
 			EndState(MOVEMENT);
 		}
@@ -381,8 +381,8 @@ void Core::RunStates() {
 
 		// Render force amount to be added
 		Vector2 cursorPos = Vector2(mouseX_, mouseY_);
-		
-		const double force = PhysicsEngine::CalculateForceBetweenObjects(
+
+		double force = PhysicsEngine::CalculateForceBetweenObjects(
 			selectedObject_->GetLocation(), 
 			&cursorPos, 
 			selectedObject_->GetMass(), 
@@ -391,6 +391,11 @@ void Core::RunStates() {
 				&cursorPos
 			)
 		);
+
+		force *= PhysicsEngine::DistanceDifference(
+					selectedObject_->GetLocation(), 
+					&cursorPos
+				 ) / selectedObject_->GetMass();
 
 		std::cout << force << std::endl;
 
