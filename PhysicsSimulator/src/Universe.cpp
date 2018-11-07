@@ -164,7 +164,7 @@ PhysicsObject* Universe::GetFirst() const {
 PhysicsObject* Universe::GetLast() const {
 	return lastObject_;
 }
-PhysicsObject* Universe::GetObjectOnPosition(Vector2 location, const float zoom, const int screen_width, const int screen_height) const {
+PhysicsObject* Universe::GetObjectOnPosition(Vector2 location, const float zoom, const int screen_width, const int screen_height, const Vector2 screen_offset) const {
 	if (firstObject_ == nullptr) {
 		return nullptr;
 	}
@@ -176,7 +176,7 @@ PhysicsObject* Universe::GetObjectOnPosition(Vector2 location, const float zoom,
 	while (current != nullptr) {
 
 		Vector2 newLocation = *current->GetLocation();
-		ConvertCoordinates(&newLocation, *originX_, *originY_, zoom, screen_width, screen_height);
+		ConvertCoordinates(&newLocation, *originX_, *originY_, zoom, screen_width, screen_height, screen_offset);
 
 		const auto distanceBetween = static_cast<int>(PhysicsEngine::DistanceDifference(&newLocation, &location)); 
 		if (distanceBetween <= current->GetRadius() * zoom) {

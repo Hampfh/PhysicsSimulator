@@ -12,6 +12,8 @@ Core::Core() {
 	mouseY_ = 0;
 	originX_ = screenWidth_ / 2;
 	originY_ = screenHeight_ / 2;
+	screenOffset_.x = 0;
+	screenOffset_.y = 0;
 	fps_ = 60;
 	renderCrossHair_ = false;
 	optimalTime_ = 0;
@@ -82,7 +84,7 @@ bool Core::OnInit() {
 void Core::OnEvent(SDL_Event* event) {
 	SDL_GetMouseState(&mouseX_, &mouseY_);
 
-	hoverObject_ = universe_->GetObjectOnPosition(Vector2(static_cast<float>(mouseX_), static_cast<float>(mouseY_)), zoom_, screenWidth_, screenHeight_);
+	hoverObject_ = universe_->GetObjectOnPosition(Vector2(static_cast<float>(mouseX_), static_cast<float>(mouseY_)), zoom_, screenWidth_, screenHeight_, screenOffset_);
 
 	// Render cross hair on mouse
 	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
@@ -126,8 +128,13 @@ void Core::OnEvent(SDL_Event* event) {
 				TransposePosition(&position, originX_, originY_);
 				ZoomPosition(&position, 1 / zoom_);
 				TransposePosition(&position, -originX_, -originY_);
+				// Reverse center
 				position.x += originX_ - static_cast<int>(screenWidth_ / 2);
 				position.y += originY_ - static_cast<int>(screenHeight_ / 2);
+
+				// Reverse offset
+				position.x -= screenOffset_.x;
+				position.y -= screenOffset_.y;
 
 				SDL_Color color;
 				color.r = 20;
@@ -141,20 +148,22 @@ void Core::OnEvent(SDL_Event* event) {
 				AddState(SHOW_PROPERTIES);
 			}
 		}
+		else if (event->button.button == SDL_BUTTON_MIDDLE) {
+			AddState(DRAG_SCREEN);
+		}
 		break;
 	case SDL_MOUSEBUTTONUP:
-		if (hoverObject_ == nullptr && simulationStates_ & MOVEMENT) {
-			// If selectedObject has selection then mark position
-			if (selectedObject_ != nullptr) {
+		if (event->button.button == SDL_BUTTON_LEFT && simulationStates_ & MOVEMENT) {
+			if (selectedObject_ != nullptr && hoverObject_ == nullptr) {
 				// Add force in the direction
 				const Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 
 				PhysicsEngine::ApplyIndividualForce(selectedObject_, pos2, 1);
 			}
-		} 
-		
-		if (simulationStates_ & MOVEMENT) {
 			EndState(MOVEMENT);
+		}
+		else if (event->button.button == SDL_BUTTON_MIDDLE) {
+			EndState(DRAG_SCREEN);
 		}
 		break;
 	case SDL_MOUSEWHEEL:
@@ -343,6 +352,12 @@ void Core::AddState(const States new_state) {
 		case LOCK_OBJECT:
 			selectedObject_ = hoverObject_;
 		break;
+		case DRAG_SCREEN:
+			if (simulationStates_ & LOCK_OBJECT) {
+				EndState(LOCK_OBJECT);
+			}
+			dragScreen_ = Vector2(mouseX_, mouseY_);
+		break;
 		default:
 
 		break;
@@ -360,7 +375,7 @@ void Core::RunStates() {
 	if (simulationStates_ & MOVEMENT) {
 		// Draw line between selected object and mouse cursor
 		Vector2 currentPos = *selectedObject_->GetLocation();
-		ConvertCoordinates(&currentPos, originX_, originY_, zoom_, screenWidth_, screenHeight_);
+		ConvertCoordinates(&currentPos, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
 		SDL_RenderDrawLine(renderer_, static_cast<int>(currentPos.x),
 		                   static_cast<int>(currentPos.y), mouseX_, mouseY_);
 
@@ -409,21 +424,28 @@ void Core::RunStates() {
 		originX_ = selectedObject_->GetLocation()->x;
 		originY_ = selectedObject_->GetLocation()->y;
 	}
+	if (simulationStates_ & DRAG_SCREEN) {
+		screenOffset_ = screenOffset_ + (Vector2(mouseX_, mouseY_) - dragScreen_);
+		std::cout << screenOffset_ << std::endl;
+		dragScreen_ = Vector2(mouseX_, mouseY_);
+	}
 }
 
 void Core::EndState(const States end_state) {
-	switch (simulationStates_) {
-		case 1: // End selection state
+	switch (end_state) {
+		case MOVEMENT: // End selection state
 			selectedObject_ = nullptr;
 		break;
-		case 2: // End view properties state
+		case SHOW_PROPERTIES: // End view properties state
 			selectedObject_ = nullptr;
 			//pause_ = false;
 
 			textDisplay_->DeleteTextObjects(tempSettingStorageFirst_, tempSettingStorageLast_);
 		break;
-		case 3:
+		case LOCK_OBJECT:
 			// Code to execute when state three is ended
+		break;
+		case DRAG_SCREEN:
 		break;
 		default:
 		break;
@@ -455,8 +477,8 @@ void Core::DrawSettingPackage() const {
 	newRect.h = tempSettingStorageFirst_->mainRect.h;
 
 	// Convert position
-	ConvertCoordinate(&newRect.x, originX_, zoom_, screenWidth_);
-	ConvertCoordinate(&newRect.y, originY_, zoom_, screenHeight_);
+	ConvertCoordinate(&newRect.x, originX_, zoom_, screenWidth_, screenOffset_.x);
+	ConvertCoordinate(&newRect.y, originY_, zoom_, screenHeight_, screenOffset_.y);
 
 	// Draw settings background
 	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, 225);
@@ -474,7 +496,7 @@ void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const in
 		radius = screenWidth_;
 	}
 
-	ConvertCoordinates(&location, originX_, originY_, zoom_, screenWidth_, screenHeight_);
+	ConvertCoordinates(&location, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
 
 	if (cross_hair) {
 		// Render a x on the planet position
@@ -521,21 +543,18 @@ void Core::UpdateGraphics() const {
 	}
 	
 	FontDisplay::DisplayText(zoomText_);
-
-	// Render cross hair att origin
-	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
-	SDL_RenderDrawLine(renderer_, originX_ - 10, originY_, originX_ + 10, originY_);
-	SDL_RenderDrawLine(renderer_, originX_, originY_ + 10, originX_, originY_ - 10);	
 }
 
-void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_y, const float zoom, const int screen_width, const int screen_height) {
+void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_y, const float zoom, const int screen_width, const int screen_height, Vector2 screen_offset) {
+	*position = *position + screen_offset;
 	CenterOrigin(position, origin_x, origin_y, screen_width, screen_height);
 	TransposePosition(position, origin_x, origin_y);
 	ZoomPosition(position, zoom);
 	TransposePosition(position, -origin_x, -origin_y);
 }
 
-void ConvertCoordinate(int* coordinate, const int origin, const float zoom, const int screen) {
+void ConvertCoordinate(int* coordinate, const int origin, const float zoom, const int screen, const float offset) {
+	*coordinate += offset;
 	CenterCoordinate(coordinate, origin, screen);
 	TransposeCoordinate(coordinate, origin);
 	ZoomCoordinate(coordinate, zoom);

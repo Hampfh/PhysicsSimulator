@@ -24,7 +24,8 @@ enum States {
 	NONE			= 0,
 	MOVEMENT		= 1,
 	SHOW_PROPERTIES = 2,
-	LOCK_OBJECT		= 4
+	LOCK_OBJECT		= 4,
+	DRAG_SCREEN		= 8
 };
 
 class Core {
@@ -42,6 +43,9 @@ class Core {
 
 	// Middle of zoom
 	int originX_, originY_;
+	Vector2 screenOffset_;
+
+	Vector2 dragScreen_;
 
 	float zoom_ = 1.0f;
 
@@ -92,8 +96,8 @@ public:
 	void DrawCircle(Vector2 location, float radius, SDL_Color* color, int cross_hair) const;
 };
 
-void ConvertCoordinates(Vector2* position, int origin_x, int origin_y, float zoom, int screen_width, int screen_height);
-void ConvertCoordinate(int* coordinate, int origin, float zoom, int screen);
+void ConvertCoordinates(Vector2* position, int origin_x, int origin_y, float zoom, int screen_width, int screen_height, Vector2 screen_offset);
+void ConvertCoordinate(int* coordinate, int origin, float zoom, int screen, float offset);
 void CenterOrigin(Vector2* position, int origin_x, int origin_y, int screen_width, int screen_height);
 void ReverseOrigin(Vector2* position, int origin_x, int origin_y, int screen_width, int screen_height);
 void CenterCoordinate(int* coordinate, int origin, int screen);

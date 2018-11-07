@@ -117,21 +117,22 @@ void FontDisplay::DeleteAll() const {
 }
 
 void FontDisplay::DeleteTextObject(TextElementList* text_object) {
-	// Delete the texture after display
-	SDL_DestroyTexture(text_object->textTexture);
-	auto current = first_;
-	auto prev = first_;
+	TextElementList* current = first_;
+	TextElementList* prev = first_;
 	while (current != nullptr) {
 
 		if (current == text_object) {
 			if (current == first_) {
 				first_ = first_->next;
-				first_->prev = nullptr;
+				first_->prev = nullptr;	
 			} else if (current == last_){
 				last_ = prev;
+				last_->next = nullptr;
 			} else {
 				prev->next = current->next;
 			}
+			// Delete the texture
+			SDL_DestroyTexture(text_object->textTexture);
 			// Delete current
 			delete current;
 			break;
@@ -144,7 +145,7 @@ void FontDisplay::DeleteTextObject(TextElementList* text_object) {
 
 // Deletes all objects between first and last
 void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* last) const {
-	auto current = first;
+	TextElementList* current = first;
 	TextElementList* prev = nullptr;
 	TextElementList* link = current->prev;
 	
@@ -161,7 +162,7 @@ void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* las
 
 		if (current == last) {
 			// There are nodes before and after
-			if (link != nullptr && last != last_) {
+			if (link != nullptr && last != last_ && last != nullptr) {
 				link->next = last->next;
 				last->next->prev = link;
 			} // Only nodes before
