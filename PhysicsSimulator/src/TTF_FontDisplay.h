@@ -14,14 +14,14 @@ class FontDisplay {
 	
 	TextElementList* first_ = nullptr;
 	TextElementList* last_ = nullptr;
-
+private:
+	TextElementList* AddToQueue();
 public:
 	FontDisplay();
 	~FontDisplay();
-	TextElementList* AddToQueue();
-	TextElementList* CreateTextObject(SDL_Rect box, std::string* message, std::string* font_path, int font_size, SDL_Color fg);
+	TextElementList* CreateTextObject(SDL_Rect box, std::string& message, std::string& font_path, int font_size, SDL_Color fg);
 	void DisplayText() const;
-	void DisplayText(TextElementList* text_object) const;
+	static void DisplayText(TextElementList* text_object);
 	static void DisplayText(TextElementList* first, TextElementList* last, SDL_Rect* main_container);
 	void DeleteAll() const;
 	void DeleteTextObject(TextElementList* text_object);

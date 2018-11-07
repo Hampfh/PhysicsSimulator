@@ -3,6 +3,6 @@
 
 class Universe;
 
-void CheckConsole(Universe* universe);
-void ConsoleInterpretation(std::string* command, Universe* universe);
+void RunInterpreter(Universe* universe, float* simulation_speed);
+void ConsoleInterpretation(std::string* command, Universe* universe, float* simulation_speed);
 bool IsNumber(const std::string& s);

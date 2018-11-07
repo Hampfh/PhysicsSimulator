@@ -50,7 +50,6 @@ public:
 	float GetY() const { return location_.y; };
 	int GetId() const { return objectId_; };
 
-	void SetForceCount(int force_count);
 	void SetLocation(Vector2 location);
 	void SetVelocity(Vector2 velocity);
 	void SetAcceleration(Vector2 acceleration);
@@ -75,9 +74,10 @@ public:
 	~Universe();
 	void ClearUniverse();
 
+	void Delete(PhysicsObject* object);
 	PhysicsObject* GetFirst() const;
 	PhysicsObject* GetLast() const;
-	PhysicsObject* GetObjectOnPosition(Vector2* location, float zoom) const;
+	PhysicsObject* GetObjectOnPosition(Vector2 location, float zoom, int screen_width, int screen_height, Vector2 screen_offset) const;
 	PhysicsObject* GetObjectWithId(int id) const;
 	PhysicsObject* SummonObject(Vector2* position, double radius, double mass, SDL_Color* color);
 };

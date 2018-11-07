@@ -12,7 +12,7 @@ FontDisplay::~FontDisplay() {
 }
 
 TextElementList* FontDisplay::AddToQueue() {
-	// Add textObject to list
+	// Create new empty textElement
 	if (first_ == nullptr) {
 		first_ = new TextElementList;
 		last_ = first_;
@@ -24,25 +24,25 @@ TextElementList* FontDisplay::AddToQueue() {
 	return last_;
 }
 
-TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string* message, std::string* font_path, const int font_size, SDL_Color fg) {
+TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string& message, std::string& font_path, const int font_size, SDL_Color fg) {
 
 	AddToQueue();
 
-	TTF_Font* font = TTF_OpenFont(font_path->c_str(), font_size);
+	TTF_Font* font = TTF_OpenFont(font_path.c_str(), font_size);
 	// Test if font was successfully imported 
 	if (!font) {
-		std::cout << "Failed to load font" << std::endl;
+		std::cerr << "Failed to load font" << std::endl;
 		return nullptr;
 	}
-	SDL_Surface* surface = TTF_RenderText_Solid(font, message->c_str(), fg);
+	SDL_Surface* surface = TTF_RenderText_Solid(font, message.c_str(), fg);
 	if (!surface) {
-		std::cout << "Failed to create text surface" << std::endl;
+		std::cerr << "Failed to create text surface" << std::endl;
 		return nullptr;
 	}
 
 	last_->textTexture = SDL_CreateTextureFromSurface(Core::renderer_, surface);
 	if (!last_->textTexture) {
-		std::cout << "Failed to create text texture" << std::endl;
+		std::cerr << "Failed to create text texture" << std::endl;
 		return nullptr;
 	}
 	SDL_FreeSurface(surface);
@@ -50,12 +50,11 @@ TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string* 
 
 	last_->textRect.x = box.x;
 	last_->textRect.y = box.y;
-	std::cout << "X: " << last_->textRect.x << " Y: " << last_->textRect.y << std::endl;
 	last_->textRect.w = box.w;
 	last_->textRect.h = box.h;
 
 	if (SDL_QueryTexture(last_->textTexture, nullptr, nullptr, &last_->textRect.w, &last_->textRect.h) != 0) {
-		std::cout << "QueryTexture not loading" << std::endl;
+		std::cerr << "QueryTexture not loading" << std::endl;
 		return nullptr;
 	}
 	return last_;
@@ -67,15 +66,14 @@ void FontDisplay::DisplayText() const {
 	auto current = first_;
 	while (current != nullptr) {
 		SDL_RenderCopy(Core::renderer_, current->textTexture, nullptr, &current->textRect);
-		std::cout << "DISPLAYED OBJECT" << std::endl;
 		current = current->next;
 	}
 }
 
 // Display the selected text object
-void FontDisplay::DisplayText(TextElementList* text_object) const {
+void FontDisplay::DisplayText(TextElementList* text_object) {
 	// Copy out text to screen
-	SDL_RenderCopy(Core::renderer_, last_->textTexture, nullptr, &last_->textRect);
+	SDL_RenderCopy(Core::renderer_, text_object->textTexture, nullptr, &text_object->textRect);
 }
 
 // Display all text object from first to last
@@ -102,33 +100,47 @@ void FontDisplay::DisplayText(TextElementList* first, TextElementList* last, SDL
 }
 
 void FontDisplay::DeleteAll() const {
+	if (first_ == nullptr) {
+		return;
+	}
 	auto current = first_;
 	auto prev = first_->prev;
 
 	while (current != nullptr) {
-		delete prev;
+		if (prev != nullptr) {
+			SDL_DestroyTexture(prev->textTexture);
+			delete prev;
+		}
 		prev = current;
 		current = current->next;
 	}
 }
 
 void FontDisplay::DeleteTextObject(TextElementList* text_object) {
-	// Delete the texture after display
-	SDL_DestroyTexture(text_object->textTexture);
-	auto current = first_;
-	auto prev = first_;
+	TextElementList* current = first_;
+	TextElementList* prev = first_;
 	while (current != nullptr) {
 
 		if (current == text_object) {
 			if (current == first_) {
-				first_ = first_->next;
+				if (first_->next == nullptr) {
+					first_ = nullptr;
+					last_ = nullptr;
+				} else {
+					first_ = first_->next;
+					first_->prev = nullptr;		
+				}
 			} else if (current == last_){
 				last_ = prev;
+				last_->next = nullptr;
 			} else {
 				prev->next = current->next;
 			}
+			// Delete the texture
+			SDL_DestroyTexture(text_object->textTexture);
 			// Delete current
 			delete current;
+			break;
 		}
 
 		prev = current;
@@ -138,17 +150,19 @@ void FontDisplay::DeleteTextObject(TextElementList* text_object) {
 
 // Deletes all objects between first and last
 void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* last) const {
-	auto current = first;
-	auto prev = first;
+	TextElementList* current = first;
+	TextElementList* prev = nullptr;
 	TextElementList* link = current->prev;
-
-	while (current == nullptr) {
-		
-		delete prev;
+	
+	while (current != nullptr) {
+		if (prev != nullptr) {
+			SDL_DestroyTexture(prev->textTexture);
+			delete prev;	
+		}
 
 		if (current == last) {
 			// There are nodes before and after
-			if (link != nullptr && last != last_) {
+			if (link != nullptr && last != last_ && last != nullptr) {
 				link->next = last->next;
 				last->next->prev = link;
 			} // Only nodes before
@@ -158,6 +172,7 @@ void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* las
 			else if (link == nullptr && last != last_) {
 				last->next = first_;
 			}
+			SDL_DestroyTexture(current->textTexture);
 			delete current;
 			break;
 		}
@@ -165,4 +180,7 @@ void FontDisplay::DeleteTextObjects(TextElementList* first, TextElementList* las
 		prev = current;
 		current = current->next;
 	}
+	// Reset first and last
+	first = nullptr;
+	last = nullptr;
 }
