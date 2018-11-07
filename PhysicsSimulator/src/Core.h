@@ -94,7 +94,8 @@ public:
 	void DrawSettingPackage() const;
 	void StabilizeFPS();
 	void UpdateGraphics() const;
-	void DrawCircle(Vector2 location, float radius, SDL_Color* color, int cross_hair) const;
+	void DrawCircle(Vector2 location, float radius, SDL_Color* color, bool cross_hair) const;
+	bool IsInsideWindow(Vector2 position, int radius) const;
 };
 
 void ConvertCoordinates(Vector2* position, int origin_x, int origin_y, float zoom, int screen_width, int screen_height, Vector2 screen_offset);

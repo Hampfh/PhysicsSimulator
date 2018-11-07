@@ -79,11 +79,6 @@ void Core::OnEvent(SDL_Event* event) {
 
 	hoverObject_ = universe_->GetObjectOnPosition(Vector2(static_cast<float>(mouseX_), static_cast<float>(mouseY_)), zoom_, screenWidth_, screenHeight_, screenOffset_);
 
-	// Render cross hair on mouse
-	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
-	SDL_RenderDrawLine(renderer_, mouseX_ - 10, mouseY_, mouseX_ + 10, mouseY_);
-	SDL_RenderDrawLine(renderer_, mouseX_, mouseY_ + 10, mouseX_, mouseY_ - 10);
-
 	switch (event->type) {
 	case SDL_QUIT:
 		running_ = false;
@@ -121,6 +116,7 @@ void Core::OnEvent(SDL_Event* event) {
 				TransposePosition(&position, originX_, originY_);
 				ZoomPosition(&position, 1 / zoom_);
 				TransposePosition(&position, -originX_, -originY_);
+
 				// Reverse center
 				position.x += originX_ - static_cast<int>(screenWidth_ / 2);
 				position.y += originY_ - static_cast<int>(screenHeight_ / 2);
@@ -258,16 +254,13 @@ void Core::OnLoop() {
 		DrawPauseLogo(screenWidth_ - 35, 10, {200, 200, 200, 255});
 	}
 
-	// Render dot on center of screen
-	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
-	SDL_RenderDrawPoint(renderer_, screenWidth_ / 2, screenHeight_ / 2);
-
 	UpdateGraphics();
 
 	RunStates();
 
 	StabilizeFPS();
 
+	// Update screen dimensions
 	SDL_GetWindowSize(window_, &screenWidth_, &screenHeight_);
 }
 
@@ -459,9 +452,16 @@ void Core::DrawSettingPackage() const {
 	FontDisplay::DisplayText(tempSettingStorageFirst_, tempSettingStorageLast_, &newRect);
 }
 
-void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const int cross_hair) const {
+void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const bool cross_hair) const {
 
 	radius = radius * zoom_;
+
+	// Don't draw object if outside screen
+	// Check if circle is outside screen
+	if (!IsInsideWindow(location, radius)) {
+		// Skip render of circle if outside
+		return;
+	}
 
 	// Optimizations (never draw a circle bigger than screen)
 	if (radius > screenWidth_) {
@@ -472,7 +472,7 @@ void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const in
 
 	if (cross_hair) {
 		// Render a x on the planet position
-		SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
+		SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
 		SDL_RenderDrawLine(renderer_, location.x - 10, location.y, location.x + 10, location.y);
 		SDL_RenderDrawLine(renderer_, location.x, location.y + 10, location.x, location.y - 10);	
 	}
@@ -514,10 +514,30 @@ void Core::UpdateGraphics() const {
 		current = current->next;
 	}
 
+	// Render dot on center of screen
+	SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
+	SDL_RenderDrawPoint(renderer_, screenWidth_ / 2, screenHeight_ / 2);
+
+	// Render cross hair on mouse
+	SDL_RenderDrawLine(renderer_, mouseX_ - 10, mouseY_, mouseX_ + 10, mouseY_);
+	SDL_RenderDrawLine(renderer_, mouseX_, mouseY_ + 10, mouseX_, mouseY_ - 10);
+
 	// Update text position
 	zoomText_->textRect.x = screenWidth_ - zoomText_->textRect.w - 10;
 	zoomText_->textRect.y = screenHeight_ - zoomText_->textRect.h - 10;
 	FontDisplay::DisplayText(zoomText_);
+}
+
+bool Core::IsInsideWindow(const Vector2 position, const int radius) const {
+	int xMin = 0, xMax = screenWidth_, yMin = 0, yMax = screenHeight_;
+	ConvertCoordinate(&xMin, originX_, zoom_, screenWidth_, screenOffset_.x);
+	ConvertCoordinate(&xMax, originX_, zoom_, screenWidth_, screenOffset_.x);
+	ConvertCoordinate(&yMin, originY_, zoom_, screenHeight_, screenOffset_.y);
+	ConvertCoordinate(&yMax, originY_, zoom_, screenHeight_, screenOffset_.y);
+
+	// Position true or false depending if it is outside window or not
+	return (position.x + radius > xMin && position.x - radius < xMax &&		// x-axis
+			position.y + radius > xMin && position.y - radius < yMax);		// y-axis
 }
 
 void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_y, const float zoom, const int screen_width, const int screen_height, Vector2 screen_offset) {
