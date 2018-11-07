@@ -24,14 +24,16 @@ int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* seco
 		// New object position
 		Vector2 newPos(massCenterX, massCenterY);
 
-		SDL_Color color;
-		color.r = 20;
-		color.g = 20;
-		color.b = 20;
-		color.a = 255;
+		// Get object with most mass
+		SDL_Color* newColor;
+		if (first->GetMass() > second->GetMass()) {
+			newColor = first->GetColor();
+		} else {
+			newColor = second->GetColor();
+		}
 
 		// Create new object
-		PhysicsObject* object = universe->SummonObject(&newPos, newRadius, newMass, &color);
+		PhysicsObject* object = universe->SummonObject(&newPos, newRadius, newMass, newColor);
 
 		// Calculate kinetic energy
 		// KE = 1/2 * m * v2
@@ -180,8 +182,7 @@ void PhysicsEngine::ApplyIndividualForce(PhysicsObject* object, Vector2 target_p
 		    r^2
 	*/
 	double forceStrength = CalculateForceBetweenObjects(object->GetLocation(), &target_position, object->GetMass(), object->GetMass() * DistanceDifference(pos1, &target_position));
-	forceStrength *= DistanceDifference(pos1, &target_position) / object->GetMass();
-	dir = dir.Multiply(static_cast<float>(forceStrength));
+	dir = dir.Multiply(static_cast<float>(forceStrength / object->GetMass()));
 
 	object->ApplyForce(dir);
 }

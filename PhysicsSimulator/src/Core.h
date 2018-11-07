@@ -35,8 +35,8 @@ class Core {
 	friend class Universe;
 
 	// Window dimensions
-	const int screenWidth_ = 800;
-	const int screenHeight_ = 600;
+	int screenWidth_ = 800;
+	int screenHeight_ = 600;
 
 	// Mouse x and y position
 	int mouseX_, mouseY_;
@@ -94,7 +94,6 @@ public:
 	void DrawSettingPackage() const;
 	void StabilizeFPS();
 	void UpdateGraphics() const;
-
 	void DrawCircle(Vector2 location, float radius, SDL_Color* color, int cross_hair) const;
 };
 

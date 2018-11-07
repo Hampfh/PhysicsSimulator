@@ -38,7 +38,7 @@ bool Core::OnInit() {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) { return false; }
 
 	window_ = SDL_CreateWindow("Physics Simulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth_,
-	                           screenHeight_, SDL_WINDOW_OPENGL);
+	                           screenHeight_, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 
 	if (window_ == nullptr) {
 		printf("Could not create window %s\n", SDL_GetError());
@@ -56,22 +56,16 @@ bool Core::OnInit() {
 
 	textDisplay_ = new FontDisplay;
 
-	// Create right bottom text
-	SDL_Rect rect;
-	rect.w = 150;
-	rect.h = 20;
-	rect.x = screenWidth_ - rect.w;
-	rect.y = screenHeight_ - rect.h;
-
+	// Initialize standard color values
 	standardColor_.r = 66;
 	standardColor_.g = 134;
 	standardColor_.b = 244;
 	standardColor_.a = 255;
 
 	std::string fontPath = "src/includes/fonts/Arial/arial.ttf";
-	std::string message = "Current zoom: " + std::to_string(zoom_);
+	std::string message = "Zoom: x" + std::to_string(zoom_);
 
-	zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, standardColor_);
+	zoomText_ = textDisplay_->CreateTextObject({screenWidth_ - 120, screenHeight_- 30, 110, 20}, message, fontPath, 12, standardColor_);
 
 	// Create console thread
 	std::thread consoleInput(RunInterpreter, universe_, &simulationSpeed_);
@@ -261,7 +255,7 @@ void Core::OnLoop() {
 	}
 	else {
 		// When pause draw pause logo
-		DrawPauseLogo(screenWidth_ - 35, 10, {0, 0, 0, 255});
+		DrawPauseLogo(screenWidth_ - 35, 10, {200, 200, 200, 255});
 	}
 
 	// Render dot on center of screen
@@ -273,6 +267,8 @@ void Core::OnLoop() {
 	RunStates();
 
 	StabilizeFPS();
+
+	SDL_GetWindowSize(window_, &screenWidth_, &screenHeight_);
 }
 
 void Core::OnRender() {
@@ -372,12 +368,7 @@ void Core::RunStates() {
 				selectedObject_->GetLocation(), 
 				&cursorPos
 			)
-		);
-
-		force *= PhysicsEngine::DistanceDifference(
-					selectedObject_->GetLocation(), 
-					&cursorPos
-				 ) / selectedObject_->GetMass();
+		) / selectedObject_->GetMass();
 
 		std::cout << force << std::endl;
 
@@ -522,7 +513,10 @@ void Core::UpdateGraphics() const {
 		current->ResetColor();
 		current = current->next;
 	}
-	
+
+	// Update text position
+	zoomText_->textRect.x = screenWidth_ - zoomText_->textRect.w - 10;
+	zoomText_->textRect.y = screenHeight_ - zoomText_->textRect.h - 10;
 	FontDisplay::DisplayText(zoomText_);
 }
 
