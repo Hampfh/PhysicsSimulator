@@ -63,16 +63,15 @@ bool Core::OnInit() {
 	rect.x = screenWidth_ - rect.w;
 	rect.y = screenHeight_ - rect.h;
 
-	SDL_Color color;
-	color.r = 20;
-	color.g = 20;
-	color.b = 20;
-	color.a = 255;
+	standardColor_.r = 66;
+	standardColor_.g = 134;
+	standardColor_.b = 244;
+	standardColor_.a = 255;
 
 	std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
 	std::string message = "Current zoom: " + std::to_string(zoom_);
 
-	zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, color);
+	zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, standardColor_);
 
 	// Create console thread
 	std::thread consoleInput(RunInterpreter, universe_, &simulationSpeed_);
@@ -136,12 +135,7 @@ void Core::OnEvent(SDL_Event* event) {
 				position.x -= screenOffset_.x;
 				position.y -= screenOffset_.y;
 
-				SDL_Color color;
-				color.r = 20;
-				color.g = 20;
-				color.b = 50;
-				color.a = 255;
-				universe_->SummonObject(&position, earthRadius, earth, &color);
+				universe_->SummonObject(&position, earthRadius, earth, &standardColor_);
 			}
 			else {
 				// Assign object to setting view
@@ -185,16 +179,10 @@ void Core::OnEvent(SDL_Event* event) {
 			rect.x = screenWidth_ - rect.w;
 			rect.y = screenHeight_ - rect.h;
 
-			SDL_Color color;
-			color.r = 20;
-			color.g = 20;
-			color.b = 20;
-			color.a = 255;
-
 			std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
 			std::string message = "Current zoom: " + std::to_string(zoom_);
 
-			zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, color);
+			zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, standardColor_);
 
 		} else if (event->wheel.y > 0 ) {
 			// zoom out
@@ -214,16 +202,10 @@ void Core::OnEvent(SDL_Event* event) {
 			rect.x = screenWidth_ - rect.w;
 			rect.y = screenHeight_ - rect.h;
 
-			SDL_Color color;
-			color.r = 20;
-			color.g = 20;
-			color.b = 20;
-			color.a = 255;
-
 			std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
 			std::string message = "Current zoom: " + std::to_string(zoom_);
 
-			zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, color);
+			zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, standardColor_);
 		}
 		break;
 	case SDL_KEYDOWN:
@@ -298,7 +280,7 @@ void Core::OnRender() {
 	SDL_RenderPresent(renderer_);
 
 	// Set draw color
-	SDL_SetRenderDrawColor(renderer_, 255, 255, 255, SDL_ALPHA_OPAQUE);
+	SDL_SetRenderDrawColor(renderer_, 10, 10, 10, SDL_ALPHA_OPAQUE);
 
 	// Render background for next frame
 	SDL_RenderClear(renderer_);
@@ -405,19 +387,13 @@ void Core::RunStates() {
 		forceText.x = mouseX_;
 		forceText.y = mouseY_ - 20;
 
-		SDL_Color color;
-		color.r = 20;
-		color.g = 20;
-		color.b = 20;
-		color.a = 255;
-
 		char txt[20];
 		std::sprintf(txt, "%e N", force);
 		std::string pth = "src/includes/fonts/Roboto/Roboto-Bold.ttf";
 
 		std::string out = txt;
 
-		const auto current = textDisplay_->CreateTextObject(forceText, out, pth, 12, color);
+		const auto current = textDisplay_->CreateTextObject(forceText, out, pth, 12, standardColor_);
 		FontDisplay::DisplayText(current);
 		textDisplay_->DeleteTextObject(current);
 	}

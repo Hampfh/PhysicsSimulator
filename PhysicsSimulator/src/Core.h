@@ -62,6 +62,8 @@ class Core {
 	TextElementList* tempSettingStorageFirst_ = nullptr;
 	TextElementList* tempSettingStorageLast_ = nullptr;
 
+	SDL_Color standardColor_;
+
 	bool running_;
 	bool pause_;
 	SDL_Window* window_;
