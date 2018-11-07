@@ -27,7 +27,7 @@ TextElementList* FontDisplay::AddToQueue() {
 TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string& message, std::string& font_path, const int font_size, SDL_Color fg) {
 
 	AddToQueue();
-
+	
 	TTF_Font* font = TTF_OpenFont(font_path.c_str(), font_size);
 	// Test if font was successfully imported 
 	if (!font) {
@@ -35,6 +35,7 @@ TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string& 
 		return nullptr;
 	}
 	SDL_Surface* surface = TTF_RenderText_Solid(font, message.c_str(), fg);
+
 	if (!surface) {
 		std::cerr << "Failed to create text surface" << std::endl;
 		return nullptr;
@@ -52,7 +53,7 @@ TextElementList* FontDisplay::CreateTextObject(const SDL_Rect box, std::string& 
 	last_->textRect.y = box.y;
 	last_->textRect.w = box.w;
 	last_->textRect.h = box.h;
-
+	
 	if (SDL_QueryTexture(last_->textTexture, nullptr, nullptr, &last_->textRect.w, &last_->textRect.h) != 0) {
 		std::cerr << "QueryTexture not loading" << std::endl;
 		return nullptr;

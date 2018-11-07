@@ -68,7 +68,7 @@ bool Core::OnInit() {
 	standardColor_.b = 244;
 	standardColor_.a = 255;
 
-	std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
+	std::string fontPath = "src/includes/fonts/Arial/arial.ttf";
 	std::string message = "Current zoom: " + std::to_string(zoom_);
 
 	zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, standardColor_);
@@ -179,7 +179,7 @@ void Core::OnEvent(SDL_Event* event) {
 			rect.x = screenWidth_ - rect.w;
 			rect.y = screenHeight_ - rect.h;
 
-			std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
+			std::string fontPath = "src/includes/fonts/Arial/arial.ttf";
 			std::string message = "Current zoom: " + std::to_string(zoom_);
 
 			zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, standardColor_);
@@ -202,7 +202,7 @@ void Core::OnEvent(SDL_Event* event) {
 			rect.x = screenWidth_ - rect.w;
 			rect.y = screenHeight_ - rect.h;
 
-			std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
+			std::string fontPath = "src/includes/fonts/Arial/arial.ttf";
 			std::string message = "Current zoom: " + std::to_string(zoom_);
 
 			zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, standardColor_);
@@ -389,7 +389,7 @@ void Core::RunStates() {
 
 		char txt[20];
 		std::sprintf(txt, "%e N", force);
-		std::string pth = "src/includes/fonts/Roboto/Roboto-Bold.ttf";
+		std::string pth = "src/includes/fonts/Arial/arial.ttf";
 
 		std::string out = txt;
 

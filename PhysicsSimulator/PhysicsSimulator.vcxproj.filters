@@ -70,6 +70,7 @@
     <Font Include="src\includes\fonts\Roboto\Roboto-Regular.ttf" />
     <Font Include="src\includes\fonts\Roboto\Roboto-Thin.ttf" />
     <Font Include="src\includes\fonts\Roboto\Roboto-ThinItalic.ttf" />
+    <Font Include="src\includes\fonts\Arial\arial.ttf" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="src\includes\fonts\Roboto\LICENSE.txt" />
