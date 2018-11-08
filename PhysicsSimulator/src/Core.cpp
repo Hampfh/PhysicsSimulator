@@ -140,7 +140,13 @@ void Core::OnEvent(SDL_Event* event) {
 		if (event->button.button == SDL_BUTTON_LEFT && simulationStates_ & MOVEMENT) {
 			if (selectedObject_ != nullptr && hoverObject_ == nullptr) {
 				// Add force in the direction
-				const Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
+				Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
+
+				ToWorldPosition(&pos2, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
+
+				std::cout << "Cursor pos: " << pos2 << std::endl;
+				std::cout << "Object pos: " << *selectedObject_->GetLocation() << std::endl;
+				SDL_Delay(250);
 
 				PhysicsEngine::ApplyIndividualForce(selectedObject_, pos2);
 			}
@@ -263,7 +269,6 @@ void Core::OnLoop() {
 
 	// Update screen dimensions
 	SDL_GetWindowSize(window_, &screenWidth_, &screenHeight_);
-	std::cout << "======" << std::endl;
 }
 
 void Core::OnRender() {
@@ -348,7 +353,7 @@ void Core::RunStates() {
 	if (simulationStates_ & MOVEMENT) {
 		// Draw line between selected object and mouse cursor
 		Vector2 currentPos = *selectedObject_->GetLocation();
-		ConvertCoordinates(&currentPos, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
+		ToScreenPosition(&currentPos, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
 		SDL_RenderDrawLine(renderer_, static_cast<int>(currentPos.x),
 		                   static_cast<int>(currentPos.y), mouseX_, mouseY_);
 
@@ -364,8 +369,6 @@ void Core::RunStates() {
 				&cursorPos
 			)
 		) / selectedObject_->GetMass();
-
-		std::cout << force << std::endl;
 
 		SDL_Rect forceText;
 		forceText.w = 200;
@@ -393,7 +396,7 @@ void Core::RunStates() {
 	}
 	if (simulationStates_ & DRAG_SCREEN) {
 		screenOffset_ = screenOffset_ + (Vector2(mouseX_, mouseY_) - dragScreen_);
-		std::cout << screenOffset_ << std::endl;
+		//std::cout << screenOffset_ << std::endl;
 		dragScreen_ = Vector2(mouseX_, mouseY_);
 	}
 }
@@ -444,8 +447,8 @@ void Core::DrawSettingPackage() const {
 	newRect.h = tempSettingStorageFirst_->mainRect.h;
 
 	// Convert position
-	ConvertCoordinate(&newRect.x, originX_, zoom_, screenWidth_, screenOffset_.x);
-	ConvertCoordinate(&newRect.y, originY_, zoom_, screenHeight_, screenOffset_.y);
+	ToScreenCoordinate(&newRect.x, originX_, zoom_, screenWidth_, screenOffset_.x);
+	ToScreenCoordinate(&newRect.y, originY_, zoom_, screenHeight_, screenOffset_.y);
 
 	// Draw settings background
 	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, 225);
@@ -464,7 +467,7 @@ void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const bo
 		radius = screenWidth_;
 	}
 
-	ConvertCoordinates(&location, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
+	ToScreenPosition(&location, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
 	
 	// Don't draw object if outside screen
 	// Check if circle is outside screen
@@ -543,15 +546,15 @@ bool Core::IsInsideWindow(const Vector2 position, const int radius) const {
 			position.y + radius > yMin && position.y - radius < yMax);		// y-axis
 }
 
-void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_y, const float zoom, const int screen_width, const int screen_height, Vector2 screen_offset) {
+void ToScreenPosition(Vector2* position, const int origin_x, const int origin_y, const float zoom, const int screen_width, const int screen_height, Vector2 screen_offset) {
 	*position = *position + screen_offset;
-	CenterOrigin(position, origin_x, origin_y, screen_width, screen_height);
+	CenterPosition(position, origin_x, origin_y, screen_width, screen_height);
 	TransposePosition(position, origin_x, origin_y);
 	ZoomPosition(position, zoom);
 	TransposePosition(position, -origin_x, -origin_y);
 }
 
-void ConvertCoordinate(int* coordinate, const int origin, const float zoom, const int screen, const float offset) {
+void ToScreenCoordinate(int* coordinate, const int origin, const float zoom, const int screen, const float offset) {
 	*coordinate += offset;
 	CenterCoordinate(coordinate, origin, screen);
 	TransposeCoordinate(coordinate, origin);
@@ -559,12 +562,34 @@ void ConvertCoordinate(int* coordinate, const int origin, const float zoom, cons
 	TransposeCoordinate(coordinate, -origin);
 }
 
-void CenterOrigin(Vector2* position, const int origin_x, const int origin_y, const int screen_width, const int screen_height) {
+void ToWorldPosition(Vector2* position, const int origin_x, const int origin_y, const float zoom, const int screen_width, const int screen_height, const Vector2 screen_offset) {
+	TransposePosition(position, origin_x, origin_y);
+	ZoomPosition(position, 1 / zoom);
+	TransposePosition(position, -origin_x, -origin_y);
+
+	// Reverse center
+	ReverseCenterPosition(position, origin_x, origin_y, screen_width, screen_height);
+
+	// Reverse offset
+	position->x -= screen_offset.x;
+	position->y -= screen_offset.y;
+}
+
+void ToWorldCoordinate(int* coordinate, const int origin, const float zoom, const int screen, const float offset) {
+	TransposeCoordinate(coordinate, origin);
+	ZoomCoordinate(coordinate, 1 / zoom);
+	TransposeCoordinate(coordinate, -origin);
+	ReverseCenterCoordinate(coordinate, origin, screen);
+
+	*coordinate -= offset;
+}
+
+void CenterPosition(Vector2* position, const int origin_x, const int origin_y, const int screen_width, const int screen_height) {
 	position->x -= origin_x - static_cast<int>(screen_width / 2);
 	position->y -= origin_y - static_cast<int>(screen_height / 2);
 }
 
-void ReverseOrigin(Vector2* position, const int origin_x, const int origin_y, const int screen_width, const int screen_height) {
+void ReverseCenterPosition(Vector2* position, const int origin_x, const int origin_y, const int screen_width, const int screen_height) {
 	position->x += origin_x - static_cast<int>(screen_width / 2);
 	position->y += origin_y - static_cast<int>(screen_height / 2);
 }
@@ -574,7 +599,7 @@ void CenterCoordinate(int* coordinate, const int origin, const int screen) {
 	*coordinate -= origin - static_cast<int>(screen / 2);
 }
 
-void ReverseCoordinate(int* coordinate, const int origin, const int screen) {
+void ReverseCenterCoordinate(int* coordinate, const int origin, const int screen) {
 	*coordinate -= origin - static_cast<int>(screen / 2);
 }
 

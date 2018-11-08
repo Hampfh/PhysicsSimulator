@@ -176,7 +176,7 @@ PhysicsObject* Universe::GetObjectOnPosition(Vector2 location, const float zoom,
 	while (current != nullptr) {
 
 		Vector2 newLocation = *current->GetLocation();
-		ConvertCoordinates(&newLocation, *originX_, *originY_, zoom, screen_width, screen_height, screen_offset);
+		ToScreenPosition(&newLocation, *originX_, *originY_, zoom, screen_width, screen_height, screen_offset);
 
 		const auto distanceBetween = static_cast<int>(PhysicsEngine::DistanceDifference(&newLocation, &location)); 
 		if (distanceBetween <= current->GetRadius() * zoom) {
