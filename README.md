@@ -7,4 +7,4 @@ A small simulator built to view objects interacting on each other with gravity a
 * Universal zoom in your custom universe
 * Apply individual forces to selected objects
 
-![Picture of simulator](https://i.gyazo.com/cb12bbc154c6c50276466e06a8cc88e8.mp4)  
+![Picture of simulator](https://i.gyazo.com/2e8357989fd4979035eb6277ac326631.png)  
