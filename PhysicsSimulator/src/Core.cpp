@@ -146,7 +146,6 @@ void Core::OnEvent(SDL_Event* event) {
 
 				std::cout << "Cursor pos: " << pos2 << std::endl;
 				std::cout << "Object pos: " << *selectedObject_->GetLocation() << std::endl;
-				SDL_Delay(250);
 
 				PhysicsEngine::ApplyIndividualForce(selectedObject_, pos2);
 			}
@@ -368,7 +367,7 @@ void Core::RunStates() {
 				selectedObject_->GetLocation(), 
 				&cursorPos
 			)
-		) / selectedObject_->GetMass();
+		) * PhysicsEngine::DistanceDifference(selectedObject_->GetLocation(), &cursorPos) / pow(selectedObject_->GetMass(), 2);
 
 		SDL_Rect forceText;
 		forceText.w = 200;
@@ -451,7 +450,7 @@ void Core::DrawSettingPackage() const {
 	ToScreenCoordinate(&newRect.y, originY_, zoom_, screenHeight_, screenOffset_.y);
 
 	// Draw settings background
-	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, 225);
+	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, 175);
 	SDL_RenderFillRect(renderer_, &newRect);
 
 	FontDisplay::DisplayText(tempSettingStorageFirst_, tempSettingStorageLast_, &newRect);

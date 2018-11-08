@@ -181,8 +181,8 @@ void PhysicsEngine::ApplyIndividualForce(PhysicsObject* object, Vector2 target_p
 	F = G --------
 		    r^2
 	*/
-	double forceStrength = CalculateForceBetweenObjects(object->GetLocation(), &target_position, object->GetMass(), object->GetMass() * DistanceDifference(pos1, &target_position));
-	dir = dir.Multiply(static_cast<float>(forceStrength / object->GetMass()));
+	const double forceStrength = CalculateForceBetweenObjects(object->GetLocation(), &target_position, object->GetMass(), object->GetMass() * DistanceDifference(pos1, &target_position));
+	dir = dir.Multiply(static_cast<float>(forceStrength * DistanceDifference(pos1, &target_position) / pow(object->GetMass(), 2)));
 
 	object->ApplyForce(dir);
 }
