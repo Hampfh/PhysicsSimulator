@@ -249,19 +249,21 @@ void Core::OnLoop() {
 	if (!pause_) {
 		pe_->UpdatePhysics(universe_, optimalTime_, simulationSpeed_);
 	}
-	else {
-		// When pause draw pause logo
-		DrawPauseLogo(screenWidth_ - 35, 10, {200, 200, 200, 255});
-	}
 
 	UpdateGraphics();
 
 	RunStates();
 
+	if (pause_) {
+		// When pause draw pause logo
+		DrawPauseLogo(screenWidth_ - 35, 10, {200, 200, 200, 255});
+	}
+
 	StabilizeFPS();
 
 	// Update screen dimensions
 	SDL_GetWindowSize(window_, &screenWidth_, &screenHeight_);
+	std::cout << "======" << std::endl;
 }
 
 void Core::OnRender() {
@@ -455,13 +457,7 @@ void Core::DrawSettingPackage() const {
 void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const bool cross_hair) const {
 
 	radius = radius * zoom_;
-
-	// Don't draw object if outside screen
-	// Check if circle is outside screen
-	if (!IsInsideWindow(location, radius)) {
-		// Skip render of circle if outside
-		return;
-	}
+	bool outside = false;
 
 	// Optimizations (never draw a circle bigger than screen)
 	if (radius > screenWidth_) {
@@ -469,6 +465,13 @@ void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const bo
 	}
 
 	ConvertCoordinates(&location, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
+	
+	// Don't draw object if outside screen
+	// Check if circle is outside screen
+	if (!IsInsideWindow(location, radius)) {
+		// Skip render of circle if outside
+		return;
+	}
 
 	if (cross_hair) {
 		// Render a x on the planet position
@@ -522,6 +525,10 @@ void Core::UpdateGraphics() const {
 	SDL_RenderDrawLine(renderer_, mouseX_ - 10, mouseY_, mouseX_ + 10, mouseY_);
 	SDL_RenderDrawLine(renderer_, mouseX_, mouseY_ + 10, mouseX_, mouseY_ - 10);
 
+	SDL_SetRenderDrawColor(renderer_, 255, 100, 100, 255);
+	SDL_RenderDrawLine(renderer_, originX_ - 10, originY_, originX_ + 10, originY_);
+	SDL_RenderDrawLine(renderer_, originX_, originY_ + 10, originX_, originY_ - 10);
+
 	// Update text position
 	zoomText_->textRect.x = screenWidth_ - zoomText_->textRect.w - 10;
 	zoomText_->textRect.y = screenHeight_ - zoomText_->textRect.h - 10;
@@ -529,15 +536,11 @@ void Core::UpdateGraphics() const {
 }
 
 bool Core::IsInsideWindow(const Vector2 position, const int radius) const {
-	int xMin = 0, xMax = screenWidth_, yMin = 0, yMax = screenHeight_;
-	ConvertCoordinate(&xMin, originX_, zoom_, screenWidth_, screenOffset_.x);
-	ConvertCoordinate(&xMax, originX_, zoom_, screenWidth_, screenOffset_.x);
-	ConvertCoordinate(&yMin, originY_, zoom_, screenHeight_, screenOffset_.y);
-	ConvertCoordinate(&yMax, originY_, zoom_, screenHeight_, screenOffset_.y);
+	const int xMin = 0, xMax = screenWidth_, yMin = 0, yMax = screenHeight_;
 
 	// Position true or false depending if it is outside window or not
 	return (position.x + radius > xMin && position.x - radius < xMax &&		// x-axis
-			position.y + radius > xMin && position.y - radius < yMax);		// y-axis
+			position.y + radius > yMin && position.y - radius < yMax);		// y-axis
 }
 
 void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_y, const float zoom, const int screen_width, const int screen_height, Vector2 screen_offset) {

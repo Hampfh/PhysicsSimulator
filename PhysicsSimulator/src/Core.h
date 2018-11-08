@@ -2,7 +2,6 @@
 // Used for enabling sprintf function
 #define _CRT_SECURE_NO_WARNINGS
 
-
 #include <SDL2/SDL.h>
 #include "PhysicsEngine.h"
 #include "includes/Vector.h"
