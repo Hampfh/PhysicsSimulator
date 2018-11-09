@@ -111,7 +111,7 @@ void Core::OnEvent(SDL_Event* event) {
 				const double earthRadius = 10;
 
 				// Summon sphere
-				Vector2 position(mouseX_, mouseY_);
+				Vector2 position(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 				
 				TransposePosition(&position, originX_, originY_);
 				ZoomPosition(&position, 1 / zoom_);
@@ -143,9 +143,6 @@ void Core::OnEvent(SDL_Event* event) {
 				Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 
 				ToWorldPosition(&pos2, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
-
-				std::cout << "Cursor pos: " << pos2 << std::endl;
-				std::cout << "Object pos: " << *selectedObject_->GetLocation() << std::endl;
 
 				PhysicsEngine::ApplyIndividualForce(selectedObject_, pos2);
 			}
@@ -333,7 +330,7 @@ void Core::AddState(const States new_state) {
 			if (simulationStates_ & LOCK_OBJECT) {
 				EndState(LOCK_OBJECT);
 			}
-			dragScreen_ = Vector2(mouseX_, mouseY_);
+			dragScreen_ = Vector2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 		break;
 		default:
 
@@ -357,7 +354,7 @@ void Core::RunStates() {
 		                   static_cast<int>(currentPos.y), mouseX_, mouseY_);
 
 		// Render force amount to be added
-		Vector2 cursorPos = Vector2(mouseX_, mouseY_);
+		Vector2 cursorPos = Vector2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));;
 
 		double force = PhysicsEngine::CalculateForceBetweenObjects(
 			selectedObject_->GetLocation(), 
@@ -390,13 +387,13 @@ void Core::RunStates() {
 	}
 	if (simulationStates_ & LOCK_OBJECT) {
 		// Change origin position to selected objects position
-		originX_ = selectedObject_->GetLocation()->x;
-		originY_ = selectedObject_->GetLocation()->y;
+		originX_ = static_cast<int>(selectedObject_->GetLocation()->x);
+		originY_ = static_cast<int>(selectedObject_->GetLocation()->y);
 	}
 	if (simulationStates_ & DRAG_SCREEN) {
-		screenOffset_ = screenOffset_ + (Vector2(mouseX_, mouseY_) - dragScreen_);
+		screenOffset_ = screenOffset_ + (Vector2(static_cast<float>(mouseX_), static_cast<float>(mouseY_)) - dragScreen_);
 		//std::cout << screenOffset_ << std::endl;
-		dragScreen_ = Vector2(mouseX_, mouseY_);
+		dragScreen_ = Vector2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 	}
 }
 
@@ -440,8 +437,8 @@ void Core::DrawPauseLogo(const int x, const int y, const SDL_Color color) {
 void Core::DrawSettingPackage() const {
 
 	SDL_Rect newRect;
-	newRect.x = selectedObject_->GetX();
-	newRect.y = selectedObject_->GetY();
+	newRect.x = static_cast<int>(selectedObject_->GetX());
+	newRect.y = static_cast<int>(selectedObject_->GetY());
 	newRect.w = tempSettingStorageFirst_->mainRect.w;
 	newRect.h = tempSettingStorageFirst_->mainRect.h;
 
@@ -463,14 +460,14 @@ void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const bo
 
 	// Optimizations (never draw a circle bigger than screen)
 	if (radius > screenWidth_) {
-		radius = screenWidth_;
+		radius =  static_cast<float>(screenWidth_);
 	}
 
 	ToScreenPosition(&location, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
 	
 	// Don't draw object if outside screen
 	// Check if circle is outside screen
-	if (!IsInsideWindow(location, radius)) {
+	if (!IsInsideWindow(location,  static_cast<int>(radius))) {
 		// Skip render of circle if outside
 		return;
 	}
@@ -478,8 +475,8 @@ void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const bo
 	if (cross_hair) {
 		// Render a x on the planet position
 		SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
-		SDL_RenderDrawLine(renderer_, location.x - 10, location.y, location.x + 10, location.y);
-		SDL_RenderDrawLine(renderer_, location.x, location.y + 10, location.x, location.y - 10);	
+		SDL_RenderDrawLine(renderer_, static_cast<int>(location.x - 10), static_cast<int>(location.y), static_cast<int>(location.x + 10), static_cast<int>(location.y));
+		SDL_RenderDrawLine(renderer_, static_cast<int>(location.x), static_cast<int>(location.y + 10), static_cast<int>(location.x), static_cast<int>(location.y - 10));	
 	}
 
 	for (auto dy = 1; dy <= radius + 1; dy++) {
@@ -505,7 +502,7 @@ void Core::StabilizeFPS() {
 	// Calculate delta time
 	optimalTime_ = static_cast<float>(1000) / static_cast<float>(fps_);
 
-	SDL_Delay(optimalTime_);
+	SDL_Delay(static_cast<Uint32>(optimalTime_));
 }
 
 void Core::UpdateGraphics() const {
@@ -514,7 +511,7 @@ void Core::UpdateGraphics() const {
 
 	PhysicsObject* current = universe_->GetFirst();
 	while (current != nullptr) {
-		DrawCircle(*current->GetLocation(), static_cast<int>(current->GetRadius()), current->GetColor(), renderCrossHair_);
+		DrawCircle(*current->GetLocation(), static_cast<float>(current->GetRadius()), current->GetColor(), renderCrossHair_);
 		current->ResetColor();
 		current = current->next;
 	}
@@ -554,7 +551,7 @@ void ToScreenPosition(Vector2* position, const int origin_x, const int origin_y,
 }
 
 void ToScreenCoordinate(int* coordinate, const int origin, const float zoom, const int screen, const float offset) {
-	*coordinate += offset;
+	*coordinate += static_cast<int>(offset);
 	CenterCoordinate(coordinate, origin, screen);
 	TransposeCoordinate(coordinate, origin);
 	ZoomCoordinate(coordinate, zoom);
@@ -580,7 +577,7 @@ void ToWorldCoordinate(int* coordinate, const int origin, const float zoom, cons
 	TransposeCoordinate(coordinate, -origin);
 	ReverseCenterCoordinate(coordinate, origin, screen);
 
-	*coordinate -= offset;
+	*coordinate -= static_cast<int>(offset);
 }
 
 void CenterPosition(Vector2* position, const int origin_x, const int origin_y, const int screen_width, const int screen_height) {
@@ -618,5 +615,5 @@ void ZoomPosition(Vector2* position, const float zoom) {
 }
 
 void ZoomCoordinate(int* coordinate, const float zoom) {
-	*coordinate = *coordinate * zoom;
+	*coordinate = *coordinate * static_cast<int>(zoom);
 }
