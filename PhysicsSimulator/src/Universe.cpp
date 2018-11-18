@@ -38,7 +38,7 @@ TextPackage PhysicsObject::PrepareObjectSettings() {
 	setting.settingTextBox.w = settingsBox_.w;
 	setting.settingTextBox.h = settingFontSize + settingOffset;
 	setting.text = "ID: " + std::to_string(objectId_);
-	setting.fontPath = "src/includes/fonts/Roboto/Roboto-Bold.ttf";
+	setting.fontPath = "src/includes/fonts/Arial/arial.ttf";
 	setting.fontSize = settingFontSize;
 	
 	// Insert setting into package
@@ -51,7 +51,7 @@ TextPackage PhysicsObject::PrepareObjectSettings() {
 	setting.settingTextBox.w = settingsBox_.w;
 	setting.settingTextBox.h = settingFontSize + settingOffset;
 	setting.text = "Mass: " + std::to_string(mass_) + " kg";
-	setting.fontPath = "src/includes/fonts/Roboto/Roboto-Medium.ttf";
+	setting.fontPath = "src/includes/fonts/Arial/arial.ttf";
 	setting.fontSize = settingFontSize;
 
 	// Insert setting into package
@@ -64,7 +64,7 @@ TextPackage PhysicsObject::PrepareObjectSettings() {
 	setting.settingTextBox.w = settingsBox_.w;
 	setting.settingTextBox.h = settingFontSize + settingOffset;
 	setting.text = "Radius: " + std::to_string(radius_) + " m";
-	setting.fontPath = "src/includes/fonts/Roboto/Roboto-Medium.ttf";
+	setting.fontPath = "src/includes/fonts/Arial/arial.ttf";
 	setting.fontSize = settingFontSize;
 	
 	// Insert setting into package
@@ -176,7 +176,7 @@ PhysicsObject* Universe::GetObjectOnPosition(Vector2 location, const float zoom,
 	while (current != nullptr) {
 
 		Vector2 newLocation = *current->GetLocation();
-		ConvertCoordinates(&newLocation, *originX_, *originY_, zoom, screen_width, screen_height, screen_offset);
+		ToScreenPosition(&newLocation, *originX_, *originY_, zoom, screen_width, screen_height, screen_offset);
 
 		const auto distanceBetween = static_cast<int>(PhysicsEngine::DistanceDifference(&newLocation, &location)); 
 		if (distanceBetween <= current->GetRadius() * zoom) {

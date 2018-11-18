@@ -170,6 +170,7 @@
     <Text Include="src\includes\fonts\Roboto\LICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Font Include="src\includes\fonts\Arial\arial.ttf" />
     <Font Include="src\includes\fonts\Roboto\Roboto-Black.ttf" />
     <Font Include="src\includes\fonts\Roboto\Roboto-BlackItalic.ttf" />
     <Font Include="src\includes\fonts\Roboto\Roboto-Bold.ttf" />

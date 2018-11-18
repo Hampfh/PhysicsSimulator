@@ -38,7 +38,7 @@ bool Core::OnInit() {
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) { return false; }
 
 	window_ = SDL_CreateWindow("Physics Simulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth_,
-	                           screenHeight_, SDL_WINDOW_OPENGL);
+	                           screenHeight_, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 
 	if (window_ == nullptr) {
 		printf("Could not create window %s\n", SDL_GetError());
@@ -56,22 +56,16 @@ bool Core::OnInit() {
 
 	textDisplay_ = new FontDisplay;
 
-	// Create right bottom text
-	SDL_Rect rect;
-	rect.w = 150;
-	rect.h = 20;
-	rect.x = screenWidth_ - rect.w;
-	rect.y = screenHeight_ - rect.h;
-
+	// Initialize standard color values
 	standardColor_.r = 66;
 	standardColor_.g = 134;
 	standardColor_.b = 244;
 	standardColor_.a = 255;
 
-	std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
-	std::string message = "Current zoom: " + std::to_string(zoom_);
+	std::string fontPath = "src/includes/fonts/Arial/arial.ttf";
+	std::string message = "Zoom: x" + std::to_string(zoom_);
 
-	zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, standardColor_);
+	zoomText_ = textDisplay_->CreateTextObject({screenWidth_ - 120, screenHeight_- 30, 110, 20}, message, fontPath, 12, standardColor_);
 
 	// Create console thread
 	std::thread consoleInput(RunInterpreter, universe_, &simulationSpeed_);
@@ -84,11 +78,6 @@ void Core::OnEvent(SDL_Event* event) {
 	SDL_GetMouseState(&mouseX_, &mouseY_);
 
 	hoverObject_ = universe_->GetObjectOnPosition(Vector2(static_cast<float>(mouseX_), static_cast<float>(mouseY_)), zoom_, screenWidth_, screenHeight_, screenOffset_);
-
-	// Render cross hair on mouse
-	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
-	SDL_RenderDrawLine(renderer_, mouseX_ - 10, mouseY_, mouseX_ + 10, mouseY_);
-	SDL_RenderDrawLine(renderer_, mouseX_, mouseY_ + 10, mouseX_, mouseY_ - 10);
 
 	switch (event->type) {
 	case SDL_QUIT:
@@ -122,11 +111,12 @@ void Core::OnEvent(SDL_Event* event) {
 				const double earthRadius = 10;
 
 				// Summon sphere
-				Vector2 position(mouseX_, mouseY_);
+				Vector2 position(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 				
 				TransposePosition(&position, originX_, originY_);
 				ZoomPosition(&position, 1 / zoom_);
 				TransposePosition(&position, -originX_, -originY_);
+
 				// Reverse center
 				position.x += originX_ - static_cast<int>(screenWidth_ / 2);
 				position.y += originY_ - static_cast<int>(screenHeight_ / 2);
@@ -150,7 +140,9 @@ void Core::OnEvent(SDL_Event* event) {
 		if (event->button.button == SDL_BUTTON_LEFT && simulationStates_ & MOVEMENT) {
 			if (selectedObject_ != nullptr && hoverObject_ == nullptr) {
 				// Add force in the direction
-				const Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
+				Vector2 pos2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
+
+				ToWorldPosition(&pos2, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
 
 				PhysicsEngine::ApplyIndividualForce(selectedObject_, pos2);
 			}
@@ -179,7 +171,7 @@ void Core::OnEvent(SDL_Event* event) {
 			rect.x = screenWidth_ - rect.w;
 			rect.y = screenHeight_ - rect.h;
 
-			std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
+			std::string fontPath = "src/includes/fonts/Arial/arial.ttf";
 			std::string message = "Current zoom: " + std::to_string(zoom_);
 
 			zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, standardColor_);
@@ -202,7 +194,7 @@ void Core::OnEvent(SDL_Event* event) {
 			rect.x = screenWidth_ - rect.w;
 			rect.y = screenHeight_ - rect.h;
 
-			std::string fontPath = "src/includes/fonts/Roboto/Roboto-Thin.ttf";
+			std::string fontPath = "src/includes/fonts/Arial/arial.ttf";
 			std::string message = "Current zoom: " + std::to_string(zoom_);
 
 			zoomText_ = textDisplay_->CreateTextObject(rect, message, fontPath, 12, standardColor_);
@@ -259,20 +251,20 @@ void Core::OnLoop() {
 	if (!pause_) {
 		pe_->UpdatePhysics(universe_, optimalTime_, simulationSpeed_);
 	}
-	else {
-		// When pause draw pause logo
-		DrawPauseLogo(screenWidth_ - 35, 10, {0, 0, 0, 255});
-	}
-
-	// Render dot on center of screen
-	SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
-	SDL_RenderDrawPoint(renderer_, screenWidth_ / 2, screenHeight_ / 2);
 
 	UpdateGraphics();
 
 	RunStates();
 
+	if (pause_) {
+		// When pause draw pause logo
+		DrawPauseLogo(screenWidth_ - 35, 10, {200, 200, 200, 255});
+	}
+
 	StabilizeFPS();
+
+	// Update screen dimensions
+	SDL_GetWindowSize(window_, &screenWidth_, &screenHeight_);
 }
 
 void Core::OnRender() {
@@ -338,7 +330,7 @@ void Core::AddState(const States new_state) {
 			if (simulationStates_ & LOCK_OBJECT) {
 				EndState(LOCK_OBJECT);
 			}
-			dragScreen_ = Vector2(mouseX_, mouseY_);
+			dragScreen_ = Vector2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 		break;
 		default:
 
@@ -357,12 +349,12 @@ void Core::RunStates() {
 	if (simulationStates_ & MOVEMENT) {
 		// Draw line between selected object and mouse cursor
 		Vector2 currentPos = *selectedObject_->GetLocation();
-		ConvertCoordinates(&currentPos, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
+		ToScreenPosition(&currentPos, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
 		SDL_RenderDrawLine(renderer_, static_cast<int>(currentPos.x),
 		                   static_cast<int>(currentPos.y), mouseX_, mouseY_);
 
 		// Render force amount to be added
-		Vector2 cursorPos = Vector2(mouseX_, mouseY_);
+		Vector2 cursorPos = Vector2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));;
 
 		double force = PhysicsEngine::CalculateForceBetweenObjects(
 			selectedObject_->GetLocation(), 
@@ -372,14 +364,7 @@ void Core::RunStates() {
 				selectedObject_->GetLocation(), 
 				&cursorPos
 			)
-		);
-
-		force *= PhysicsEngine::DistanceDifference(
-					selectedObject_->GetLocation(), 
-					&cursorPos
-				 ) / selectedObject_->GetMass();
-
-		std::cout << force << std::endl;
+		) * PhysicsEngine::DistanceDifference(selectedObject_->GetLocation(), &cursorPos) / pow(selectedObject_->GetMass(), 2);
 
 		SDL_Rect forceText;
 		forceText.w = 200;
@@ -389,7 +374,7 @@ void Core::RunStates() {
 
 		char txt[20];
 		std::sprintf(txt, "%e N", force);
-		std::string pth = "src/includes/fonts/Roboto/Roboto-Bold.ttf";
+		std::string pth = "src/includes/fonts/Arial/arial.ttf";
 
 		std::string out = txt;
 
@@ -402,13 +387,13 @@ void Core::RunStates() {
 	}
 	if (simulationStates_ & LOCK_OBJECT) {
 		// Change origin position to selected objects position
-		originX_ = selectedObject_->GetLocation()->x;
-		originY_ = selectedObject_->GetLocation()->y;
+		originX_ = static_cast<int>(selectedObject_->GetLocation()->x);
+		originY_ = static_cast<int>(selectedObject_->GetLocation()->y);
 	}
 	if (simulationStates_ & DRAG_SCREEN) {
-		screenOffset_ = screenOffset_ + (Vector2(mouseX_, mouseY_) - dragScreen_);
-		std::cout << screenOffset_ << std::endl;
-		dragScreen_ = Vector2(mouseX_, mouseY_);
+		screenOffset_ = screenOffset_ + (Vector2(static_cast<float>(mouseX_), static_cast<float>(mouseY_)) - dragScreen_);
+		//std::cout << screenOffset_ << std::endl;
+		dragScreen_ = Vector2(static_cast<float>(mouseX_), static_cast<float>(mouseY_));
 	}
 }
 
@@ -452,38 +437,46 @@ void Core::DrawPauseLogo(const int x, const int y, const SDL_Color color) {
 void Core::DrawSettingPackage() const {
 
 	SDL_Rect newRect;
-	newRect.x = selectedObject_->GetX();
-	newRect.y = selectedObject_->GetY();
+	newRect.x = static_cast<int>(selectedObject_->GetX());
+	newRect.y = static_cast<int>(selectedObject_->GetY());
 	newRect.w = tempSettingStorageFirst_->mainRect.w;
 	newRect.h = tempSettingStorageFirst_->mainRect.h;
 
 	// Convert position
-	ConvertCoordinate(&newRect.x, originX_, zoom_, screenWidth_, screenOffset_.x);
-	ConvertCoordinate(&newRect.y, originY_, zoom_, screenHeight_, screenOffset_.y);
+	ToScreenCoordinate(&newRect.x, originX_, zoom_, screenWidth_, screenOffset_.x);
+	ToScreenCoordinate(&newRect.y, originY_, zoom_, screenHeight_, screenOffset_.y);
 
 	// Draw settings background
-	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, 225);
+	SDL_SetRenderDrawColor(renderer_, 230, 230, 230, 175);
 	SDL_RenderFillRect(renderer_, &newRect);
 
 	FontDisplay::DisplayText(tempSettingStorageFirst_, tempSettingStorageLast_, &newRect);
 }
 
-void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const int cross_hair) const {
+void Core::DrawCircle(Vector2 location, float radius, SDL_Color* color, const bool cross_hair) const {
 
 	radius = radius * zoom_;
+	bool outside = false;
 
 	// Optimizations (never draw a circle bigger than screen)
 	if (radius > screenWidth_) {
-		radius = screenWidth_;
+		radius =  static_cast<float>(screenWidth_);
 	}
 
-	ConvertCoordinates(&location, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
+	ToScreenPosition(&location, originX_, originY_, zoom_, screenWidth_, screenHeight_, screenOffset_);
+	
+	// Don't draw object if outside screen
+	// Check if circle is outside screen
+	if (!IsInsideWindow(location,  static_cast<int>(radius))) {
+		// Skip render of circle if outside
+		return;
+	}
 
 	if (cross_hair) {
 		// Render a x on the planet position
-		SDL_SetRenderDrawColor(renderer_, 20, 20, 20, 255);
-		SDL_RenderDrawLine(renderer_, location.x - 10, location.y, location.x + 10, location.y);
-		SDL_RenderDrawLine(renderer_, location.x, location.y + 10, location.x, location.y - 10);	
+		SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
+		SDL_RenderDrawLine(renderer_, static_cast<int>(location.x - 10), static_cast<int>(location.y), static_cast<int>(location.x + 10), static_cast<int>(location.y));
+		SDL_RenderDrawLine(renderer_, static_cast<int>(location.x), static_cast<int>(location.y + 10), static_cast<int>(location.x), static_cast<int>(location.y - 10));	
 	}
 
 	for (auto dy = 1; dy <= radius + 1; dy++) {
@@ -509,7 +502,7 @@ void Core::StabilizeFPS() {
 	// Calculate delta time
 	optimalTime_ = static_cast<float>(1000) / static_cast<float>(fps_);
 
-	SDL_Delay(optimalTime_);
+	SDL_Delay(static_cast<Uint32>(optimalTime_));
 }
 
 void Core::UpdateGraphics() const {
@@ -518,36 +511,81 @@ void Core::UpdateGraphics() const {
 
 	PhysicsObject* current = universe_->GetFirst();
 	while (current != nullptr) {
-		DrawCircle(*current->GetLocation(), static_cast<int>(current->GetRadius()), current->GetColor(), renderCrossHair_);
+		DrawCircle(*current->GetLocation(), static_cast<float>(current->GetRadius()), current->GetColor(), renderCrossHair_);
 		current->ResetColor();
 		current = current->next;
 	}
-	
+
+	// Render dot on center of screen
+	SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
+	SDL_RenderDrawPoint(renderer_, screenWidth_ / 2, screenHeight_ / 2);
+
+	// Render cross hair on mouse
+	SDL_RenderDrawLine(renderer_, mouseX_ - 10, mouseY_, mouseX_ + 10, mouseY_);
+	SDL_RenderDrawLine(renderer_, mouseX_, mouseY_ + 10, mouseX_, mouseY_ - 10);
+
+	SDL_SetRenderDrawColor(renderer_, 255, 100, 100, 255);
+	SDL_RenderDrawLine(renderer_, originX_ - 10, originY_, originX_ + 10, originY_);
+	SDL_RenderDrawLine(renderer_, originX_, originY_ + 10, originX_, originY_ - 10);
+
+	// Update text position
+	zoomText_->textRect.x = screenWidth_ - zoomText_->textRect.w - 10;
+	zoomText_->textRect.y = screenHeight_ - zoomText_->textRect.h - 10;
 	FontDisplay::DisplayText(zoomText_);
 }
 
-void ConvertCoordinates(Vector2* position, const int origin_x, const int origin_y, const float zoom, const int screen_width, const int screen_height, Vector2 screen_offset) {
+bool Core::IsInsideWindow(const Vector2 position, const int radius) const {
+	const int xMin = 0, xMax = screenWidth_, yMin = 0, yMax = screenHeight_;
+
+	// Position true or false depending if it is outside window or not
+	return (position.x + radius > xMin && position.x - radius < xMax &&		// x-axis
+			position.y + radius > yMin && position.y - radius < yMax);		// y-axis
+}
+
+void ToScreenPosition(Vector2* position, const int origin_x, const int origin_y, const float zoom, const int screen_width, const int screen_height, Vector2 screen_offset) {
 	*position = *position + screen_offset;
-	CenterOrigin(position, origin_x, origin_y, screen_width, screen_height);
+	CenterPosition(position, origin_x, origin_y, screen_width, screen_height);
 	TransposePosition(position, origin_x, origin_y);
 	ZoomPosition(position, zoom);
 	TransposePosition(position, -origin_x, -origin_y);
 }
 
-void ConvertCoordinate(int* coordinate, const int origin, const float zoom, const int screen, const float offset) {
-	*coordinate += offset;
+void ToScreenCoordinate(int* coordinate, const int origin, const float zoom, const int screen, const float offset) {
+	*coordinate += static_cast<int>(offset);
 	CenterCoordinate(coordinate, origin, screen);
 	TransposeCoordinate(coordinate, origin);
 	ZoomCoordinate(coordinate, zoom);
 	TransposeCoordinate(coordinate, -origin);
 }
 
-void CenterOrigin(Vector2* position, const int origin_x, const int origin_y, const int screen_width, const int screen_height) {
+void ToWorldPosition(Vector2* position, const int origin_x, const int origin_y, const float zoom, const int screen_width, const int screen_height, const Vector2 screen_offset) {
+	TransposePosition(position, origin_x, origin_y);
+	ZoomPosition(position, 1 / zoom);
+	TransposePosition(position, -origin_x, -origin_y);
+
+	// Reverse center
+	ReverseCenterPosition(position, origin_x, origin_y, screen_width, screen_height);
+
+	// Reverse offset
+	position->x -= screen_offset.x;
+	position->y -= screen_offset.y;
+}
+
+void ToWorldCoordinate(int* coordinate, const int origin, const float zoom, const int screen, const float offset) {
+	TransposeCoordinate(coordinate, origin);
+	ZoomCoordinate(coordinate, 1 / zoom);
+	TransposeCoordinate(coordinate, -origin);
+	ReverseCenterCoordinate(coordinate, origin, screen);
+
+	*coordinate -= static_cast<int>(offset);
+}
+
+void CenterPosition(Vector2* position, const int origin_x, const int origin_y, const int screen_width, const int screen_height) {
 	position->x -= origin_x - static_cast<int>(screen_width / 2);
 	position->y -= origin_y - static_cast<int>(screen_height / 2);
 }
 
-void ReverseOrigin(Vector2* position, const int origin_x, const int origin_y, const int screen_width, const int screen_height) {
+void ReverseCenterPosition(Vector2* position, const int origin_x, const int origin_y, const int screen_width, const int screen_height) {
 	position->x += origin_x - static_cast<int>(screen_width / 2);
 	position->y += origin_y - static_cast<int>(screen_height / 2);
 }
@@ -557,7 +595,7 @@ void CenterCoordinate(int* coordinate, const int origin, const int screen) {
 	*coordinate -= origin - static_cast<int>(screen / 2);
 }
 
-void ReverseCoordinate(int* coordinate, const int origin, const int screen) {
+void ReverseCenterCoordinate(int* coordinate, const int origin, const int screen) {
 	*coordinate -= origin - static_cast<int>(screen / 2);
 }
 
@@ -577,5 +615,5 @@ void ZoomPosition(Vector2* position, const float zoom) {
 }
 
 void ZoomCoordinate(int* coordinate, const float zoom) {
-	*coordinate = *coordinate * zoom;
+	*coordinate = *coordinate * static_cast<int>(zoom);
 }

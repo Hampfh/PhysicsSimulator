@@ -22,37 +22,39 @@ int PhysicsEngine::CollisionManagement(PhysicsObject* first, PhysicsObject* seco
 		const double newRadius = std::cbrt(newVolume / (static_cast<double>(4)/3 * PI));
 
 		// New object position
-		Vector2 newPos(massCenterX, massCenterY);
+		Vector2 newPos(static_cast<float>(massCenterX), static_cast<float>(massCenterY));
 
-		SDL_Color color;
-		color.r = 20;
-		color.g = 20;
-		color.b = 20;
-		color.a = 255;
+		// Get object with most mass
+		SDL_Color* newColor;
+		if (first->GetMass() > second->GetMass()) {
+			newColor = first->GetColor();
+		} else {
+			newColor = second->GetColor();
+		}
 
 		// Create new object
-		PhysicsObject* object = universe->SummonObject(&newPos, newRadius, newMass, &color);
+		PhysicsObject* object = universe->SummonObject(&newPos, newRadius, newMass, newColor);
 
 		// Calculate kinetic energy
 		// KE = 1/2 * m * v2
 		// Calc first object's KE
 		const double firstKineticEnergy = pow(first->GetVelocity()->GetMagnitude(), 2) * static_cast<double>(1)/static_cast<double>(2) * first->GetMass();
-		Vector2 firstUnitVector = first->GetVelocity()->Divide(first->GetVelocity()->GetMagnitude());
-		const Vector2 firstKeVector = firstUnitVector.Multiply(firstKineticEnergy);
+		Vector2 firstUnitVector = first->GetVelocity()->Divide(static_cast<float>(first->GetVelocity()->GetMagnitude()));
+		const Vector2 firstKeVector = firstUnitVector.Multiply(static_cast<float>(firstKineticEnergy));
 
 		// Calc second object's KE
 		const double secondKineticEnergy = pow(second->GetVelocity()->GetMagnitude(), 2) * static_cast<double>(1)/static_cast<double>(2) * second->GetMass();
-		Vector2 secondUnitVector = second->GetVelocity()->Divide(second->GetVelocity()->GetMagnitude());
-		const Vector2 secondKeVector = secondUnitVector.Multiply(secondKineticEnergy);
+		Vector2 secondUnitVector = second->GetVelocity()->Divide(static_cast<float>(second->GetVelocity()->GetMagnitude()));
+		const Vector2 secondKeVector = secondUnitVector.Multiply(static_cast<float>(secondKineticEnergy));
 
 		// Merge first KE and second KE
 		Vector2 totalKeVector = firstKeVector + secondKeVector;
 		const double totalKeMag = totalKeVector.GetMagnitude();
-		Vector2 totalUnitVector = totalKeVector.Divide(totalKeMag);
+		Vector2 totalUnitVector = totalKeVector.Divide(static_cast<float>(totalKeMag));
 
 		// Calc velocity from KE
 		const double newVelocity = std::sqrt(2 * totalKeMag / newMass);
-		const Vector2 newVelocityVector = totalUnitVector.Multiply(newVelocity);
+		const Vector2 newVelocityVector = totalUnitVector.Multiply(static_cast<float>(newVelocity));
 		
 		// Apply new velocity
 		object->SetVelocity(newVelocityVector);
@@ -111,8 +113,8 @@ void PhysicsEngine::UpdatePhysics(Universe* universe, const float delta_time, co
 			F = G --------
 				    r^2
 			*/
-			const float forceStrength = static_cast<float>(6.672f * pow(10, -11)) * (static_cast<float>(current->GetMass() * static_cast<float>(currentMatcher->GetMass())) / pow(DistanceDifference(current, currentMatcher), 2));
-			dir = dir.Multiply(forceStrength / static_cast<float>(current->GetMass()));
+			const double forceStrength = CalculateForceBetweenObjects(pos1, pos2, current->GetMass(), currentMatcher->GetMass());
+			dir = dir.Multiply(static_cast<float>(forceStrength / current->GetMass()));
 
 			current->ApplyForce(dir);
 
@@ -179,9 +181,8 @@ void PhysicsEngine::ApplyIndividualForce(PhysicsObject* object, Vector2 target_p
 	F = G --------
 		    r^2
 	*/
-	double forceStrength = CalculateForceBetweenObjects(object->GetLocation(), &target_position, object->GetMass(), object->GetMass() * DistanceDifference(pos1, &target_position));
-	forceStrength *= DistanceDifference(pos1, &target_position) / object->GetMass();
-	dir = dir.Multiply(static_cast<float>(forceStrength));
+	const double forceStrength = CalculateForceBetweenObjects(object->GetLocation(), &target_position, object->GetMass(), object->GetMass() * DistanceDifference(pos1, &target_position));
+	dir = dir.Multiply(static_cast<float>(forceStrength * DistanceDifference(pos1, &target_position) / pow(object->GetMass(), 2)));
 
 	object->ApplyForce(dir);
 }

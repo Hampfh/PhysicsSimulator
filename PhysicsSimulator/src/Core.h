@@ -2,7 +2,6 @@
 // Used for enabling sprintf function
 #define _CRT_SECURE_NO_WARNINGS
 
-
 #include <SDL2/SDL.h>
 #include "PhysicsEngine.h"
 #include "includes/Vector.h"
@@ -35,8 +34,8 @@ class Core {
 	friend class Universe;
 
 	// Window dimensions
-	const int screenWidth_ = 800;
-	const int screenHeight_ = 600;
+	int screenWidth_ = 800;
+	int screenHeight_ = 600;
 
 	// Mouse x and y position
 	int mouseX_, mouseY_;
@@ -94,16 +93,21 @@ public:
 	void DrawSettingPackage() const;
 	void StabilizeFPS();
 	void UpdateGraphics() const;
-
-	void DrawCircle(Vector2 location, float radius, SDL_Color* color, int cross_hair) const;
+	void DrawCircle(Vector2 location, float radius, SDL_Color* color, bool cross_hair) const;
+	bool IsInsideWindow(Vector2 position, int radius) const;
 };
-
-void ConvertCoordinates(Vector2* position, int origin_x, int origin_y, float zoom, int screen_width, int screen_height, Vector2 screen_offset);
-void ConvertCoordinate(int* coordinate, int origin, float zoom, int screen, float offset);
-void CenterOrigin(Vector2* position, int origin_x, int origin_y, int screen_width, int screen_height);
-void ReverseOrigin(Vector2* position, int origin_x, int origin_y, int screen_width, int screen_height);
+/** @Description: Converts objects coordinates to screen coordinates
+ */
+void ToScreenPosition(Vector2* position, int origin_x, int origin_y, float zoom, int screen_width, int screen_height, Vector2 screen_offset);
+/** @Description: Converts a coordinate to screen coordinate
+ */
+void ToScreenCoordinate(int* coordinate, int origin, float zoom, int screen, float offset);
+void ToWorldPosition(Vector2* position, int origin_x, int origin_y, float zoom, int screen_width, int screen_height, Vector2 screen_offset);
+void ToWorldCoordinate(int* coordinate, int origin, float zoom, int screen, float offset);
+void CenterPosition(Vector2* position, int origin_x, int origin_y, int screen_width, int screen_height);
+void ReverseCenterPosition(Vector2* position, int origin_x, int origin_y, int screen_width, int screen_height);
 void CenterCoordinate(int* coordinate, int origin, int screen);
-void ReverseCoordinate(int* coordinate, int origin, int screen);
+void ReverseCenterCoordinate(int* coordinate, int origin, int screen);
 void TransposePosition(Vector2* position, int origin_x, int origin_y);
 void TransposeCoordinate(int* coordinate, int origin);
 void ZoomPosition(Vector2* position, float zoom);
